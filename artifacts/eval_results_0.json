@@ -1,0 +1,1815 @@
+{
+  "config": {
+    "split": "validation",
+    "limit": 50,
+    "top_k": 5,
+    "model": "THUDM/GLM-Z1-9B-0414"
+  },
+  "summary": {
+    "num_examples": 50,
+    "avg_em": 0.02,
+    "avg_f1": 0.2890462318350704
+  },
+  "results": [
+    {
+      "example_id": "5a8b57f25542995d1e6f1371",
+      "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
+      "gold": "yes",
+      "predict": "Answer: Yes. Both are American; Scott Derrickson is an American director living in Los Angeles ([3]), while Ed Wood (the filmmaker) was active in U.S. cinema ([2]).",
+      "em": 0.0,
+      "f1": 0.07692307692307693,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Woodson, Arkansas",
+          "score": 26.006359571447557,
+          "id": "5a8b57f25542995d1e6f1371:2"
+        },
+        {
+          "title": "Ed Wood (film)",
+          "score": 24.311943789893416,
+          "id": "5a8b57f25542995d1e6f1371:0"
+        },
+        {
+          "title": "Scott Derrickson",
+          "score": 24.157063632713857,
+          "id": "5a8b57f25542995d1e6f1371:1"
+        },
+        {
+          "title": "Doctor Strange (2016 film)",
+          "score": 23.13991441759702,
+          "id": "5a8b57f25542995d1e6f1371:9"
+        },
+        {
+          "title": "Conrad Brooks",
+          "score": 21.69542763633523,
+          "id": "5a8b57f25542995d1e6f1371:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8c7595554299585d9e36b6",
+      "question": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+      "gold": "Chief of Protocol",
+      "predict": "Answer: None specified; based on provided context alone.\n</think>\nAnswer: None specified; based on provided context alone.\n</answer>",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Kiss and Tell (1945 film)",
+          "score": 47.79595226704236,
+          "id": "5a8c7595554299585d9e36b6:6"
+        },
+        {
+          "title": "A Kiss for Corliss",
+          "score": 47.72285270477437,
+          "id": "5a8c7595554299585d9e36b6:5"
+        },
+        {
+          "title": "Meet Corliss Archer (TV series)",
+          "score": 33.4027829230694,
+          "id": "5a8c7595554299585d9e36b6:3"
+        },
+        {
+          "title": "Janet Waldo",
+          "score": 28.635506276381875,
+          "id": "5a8c7595554299585d9e36b6:2"
+        },
+        {
+          "title": "Meet Corliss Archer",
+          "score": 27.832154455236328,
+          "id": "5a8c7595554299585d9e36b6:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5a85ea095542994775f606a8",
+      "question": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+      "gold": "Animorphs",
+      "predict": "Answer: Animorphs",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Animorphs",
+          "score": 65.04377526419793,
+          "id": "5a85ea095542994775f606a8:8"
+        },
+        {
+          "title": "List of Square Enix companion books",
+          "score": 44.29541023294084,
+          "id": "5a85ea095542994775f606a8:5"
+        },
+        {
+          "title": "Victoria Hanley",
+          "score": 42.36437654307559,
+          "id": "5a85ea095542994775f606a8:1"
+        },
+        {
+          "title": "Science Fantasy (magazine)",
+          "score": 42.096011471710064,
+          "id": "5a85ea095542994775f606a8:7"
+        },
+        {
+          "title": "Andre Norton Award",
+          "score": 41.65074972568999,
+          "id": "5a85ea095542994775f606a8:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5adbf0a255429947ff17385a",
+      "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+      "gold": "no",
+      "predict": "Answer: No.",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Esma Sultan Mansion",
+          "score": 52.74209400958051,
+          "id": "5adbf0a255429947ff17385a:6"
+        },
+        {
+          "title": "Laleli Mosque",
+          "score": 40.04779142760486,
+          "id": "5adbf0a255429947ff17385a:5"
+        },
+        {
+          "title": "Sultan Ahmed Mosque",
+          "score": 36.93694508562837,
+          "id": "5adbf0a255429947ff17385a:4"
+        },
+        {
+          "title": "Djamaâ el Kebir",
+          "score": 33.1154721583026,
+          "id": "5adbf0a255429947ff17385a:1"
+        },
+        {
+          "title": "Esma Sultan (daughter of Abdülaziz)",
+          "score": 28.150986787835894,
+          "id": "5adbf0a255429947ff17385a:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8e3ea95542995a26add48d",
+      "question": "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
+      "gold": "Greenwich Village, New York City",
+      "predict": "Answer: There is no information provided regarding where Director Adriana Trigiani is based or associated with any New York city specifically within these contexts.\n</think>\nAnswer: No specific New York city is indicated for Director Adriana Trigiani within these contexts.\n</answer>",
+      "em": 0.0,
+      "f1": 0.13043478260869565,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Big Stone Gap (film)",
+          "score": 50.104788753810936,
+          "id": "5a8e3ea95542995a26add48d:9"
+        },
+        {
+          "title": "Just Another Romantic Wrestling Comedy",
+          "score": 34.93932099255332,
+          "id": "5a8e3ea95542995a26add48d:0"
+        },
+        {
+          "title": "Clinton, Minnesota",
+          "score": 34.74575709877864,
+          "id": "5a8e3ea95542995a26add48d:6"
+        },
+        {
+          "title": "Nola (film)",
+          "score": 34.61313398778815,
+          "id": "5a8e3ea95542995a26add48d:2"
+        },
+        {
+          "title": "Kingston Morning",
+          "score": 34.54882306168458,
+          "id": "5a8e3ea95542995a26add48d:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5abd94525542992ac4f382d2",
+      "question": "2014 S/S is the debut album of a South Korean boy group that was formed by who?",
+      "gold": "YG Entertainment",
+      "predict": "Answer: YG Entertainment.",
+      "em": 0.0,
+      "f1": 0.8,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "SF9 (band)",
+          "score": 48.045507904659765,
+          "id": "5abd94525542992ac4f382d2:7"
+        },
+        {
+          "title": "Seventeen discography",
+          "score": 44.406760960154855,
+          "id": "5abd94525542992ac4f382d2:8"
+        },
+        {
+          "title": "Madtown",
+          "score": 43.73854777378168,
+          "id": "5abd94525542992ac4f382d2:5"
+        },
+        {
+          "title": "2014 S/S",
+          "score": 42.269854604694736,
+          "id": "5abd94525542992ac4f382d2:2"
+        },
+        {
+          "title": "Winner (band)",
+          "score": 40.54310884465507,
+          "id": "5abd94525542992ac4f382d2:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5a85b2d95542997b5ce40028",
+      "question": "Who was known by his stage name Aladin and helped organizations improve their performance as a consultant?",
+      "gold": "Eenasul Fateh",
+      "predict": "Answer: Eenasul Fateh (Aladin).",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Eenasul Fateh",
+          "score": 37.702285812704446,
+          "id": "5a85b2d95542997b5ce40028:3"
+        },
+        {
+          "title": "Management consulting",
+          "score": 27.132006210993843,
+          "id": "5a85b2d95542997b5ce40028:7"
+        },
+        {
+          "title": "ELDee",
+          "score": 24.70056042134217,
+          "id": "5a85b2d95542997b5ce40028:6"
+        },
+        {
+          "title": "Method Man",
+          "score": 24.640123572181096,
+          "id": "5a85b2d95542997b5ce40028:1"
+        },
+        {
+          "title": "Lil Ru",
+          "score": 23.226035355993947,
+          "id": "5a85b2d95542997b5ce40028:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5a87ab905542996e4f3088c1",
+      "question": "The arena where the Lewiston Maineiacs played their home games can seat how many people?",
+      "gold": "3,677 seated",
+      "predict": "Answer: The information provided does not specify seating capacity for Androscoggin Bank Col尼斯é where Lewiston Maineiacs played home games.",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Dwyer Arena",
+          "score": 40.774699093884394,
+          "id": "5a87ab905542996e4f3088c1:8"
+        },
+        {
+          "title": "Lewiston Maineiacs",
+          "score": 38.016336335269365,
+          "id": "5a87ab905542996e4f3088c1:7"
+        },
+        {
+          "title": "Billings Bulls",
+          "score": 36.23396481177823,
+          "id": "5a87ab905542996e4f3088c1:0"
+        },
+        {
+          "title": "2006–07 QMJHL season",
+          "score": 32.25001414088852,
+          "id": "5a87ab905542996e4f3088c1:9"
+        },
+        {
+          "title": "Case Gym",
+          "score": 31.367614279014056,
+          "id": "5a87ab905542996e4f3088c1:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7bbb64554299042af8f7cc",
+      "question": "Who is older, Annie Morton or Terry Richardson?",
+      "gold": "Terry Richardson",
+      "predict": "Answer: Terry Richardson (born August 14, 1965) is older than Annie Morton (born October 8, 1970).",
+      "em": 0.0,
+      "f1": 0.2222222222222222,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Annie Morton",
+          "score": 30.020267538733833,
+          "id": "5a7bbb64554299042af8f7cc:0"
+        },
+        {
+          "title": "Kenton Richardson",
+          "score": 22.707779423952577,
+          "id": "5a7bbb64554299042af8f7cc:9"
+        },
+        {
+          "title": "Terry Richardson",
+          "score": 21.297005191657426,
+          "id": "5a7bbb64554299042af8f7cc:2"
+        },
+        {
+          "title": "Lady Gaga x Terry Richardson",
+          "score": 20.657159143967895,
+          "id": "5a7bbb64554299042af8f7cc:3"
+        },
+        {
+          "title": "Gumbo (PJ Morton album)",
+          "score": 18.495862473491027,
+          "id": "5a7bbb64554299042af8f7cc:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8db19d5542994ba4e3dd00",
+      "question": "Are Local H and For Against both from the United States?",
+      "gold": "yes",
+      "predict": "Answer: Only Local H (context [3]) is confirmed to be from the U.S., as \"For Against\" isn't mentioned in any provided context entries.",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Amherst, Massachusetts",
+          "score": 22.042386146605065,
+          "id": "5a8db19d5542994ba4e3dd00:3"
+        },
+        {
+          "title": "William H. Cook Water Tank House",
+          "score": 21.84679507142463,
+          "id": "5a8db19d5542994ba4e3dd00:2"
+        },
+        {
+          "title": "Local H",
+          "score": 19.89538941868568,
+          "id": "5a8db19d5542994ba4e3dd00:4"
+        },
+        {
+          "title": "Ophur",
+          "score": 19.30418639644835,
+          "id": "5a8db19d5542994ba4e3dd00:7"
+        },
+        {
+          "title": "Suffrajett",
+          "score": 19.25973401786826,
+          "id": "5a8db19d5542994ba4e3dd00:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7166395542994082a3e814",
+      "question": "What is the name of the fight song of the university whose main campus is in Lawrence, Kansas and whose branch campuses are in the Kansas City metropolitan area?",
+      "gold": "Kansas Song",
+      "predict": "Answer: Rock Chalk Jayhawk",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "University of Kansas",
+          "score": 99.0389269859926,
+          "id": "5a7166395542994082a3e814:9"
+        },
+        {
+          "title": "University of Missouri–Kansas City",
+          "score": 76.6841166031869,
+          "id": "5a7166395542994082a3e814:1"
+        },
+        {
+          "title": "Kansas City metropolitan area",
+          "score": 66.78059427182515,
+          "id": "5a7166395542994082a3e814:6"
+        },
+        {
+          "title": "Downtown Kansas City",
+          "score": 64.51302014447117,
+          "id": "5a7166395542994082a3e814:5"
+        },
+        {
+          "title": "Kansas City jazz",
+          "score": 63.49310776087972,
+          "id": "5a7166395542994082a3e814:2"
+        }
+      ]
+    },
+    {
+      "example_id": "5a877e5d5542993e715abf7d",
+      "question": "What screenwriter with credits for \"Evolution\" co-wrote a film starring Nicolas Cage and Téa Leoni?",
+      "gold": "David Weissman",
+      "predict": "Answer: David Weissman",
+      "em": 0.0,
+      "f1": 0.8,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "The Family Man",
+          "score": 49.14337212246012,
+          "id": "5a877e5d5542993e715abf7d:9"
+        },
+        {
+          "title": "Deadfall (1993 film)",
+          "score": 37.57463259620051,
+          "id": "5a877e5d5542993e715abf7d:4"
+        },
+        {
+          "title": "David Weissman",
+          "score": 33.174818112895096,
+          "id": "5a877e5d5542993e715abf7d:3"
+        },
+        {
+          "title": "It Could Happen to You (1994 film)",
+          "score": 29.22613108094807,
+          "id": "5a877e5d5542993e715abf7d:7"
+        },
+        {
+          "title": "Drive Angry",
+          "score": 28.83667336936983,
+          "id": "5a877e5d5542993e715abf7d:6"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab3b0bf5542992ade7c6e39",
+      "question": "What year did Guns N Roses perform a promo for a movie starring Arnold Schwarzenegger as a former New York Police detective?",
+      "gold": "1999",
+      "predict": "Answer: 1999",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "End of Days (film)",
+          "score": 45.26701753604144,
+          "id": "5ab3b0bf5542992ade7c6e39:7"
+        },
+        {
+          "title": "Oh My God (Guns N' Roses song)",
+          "score": 41.26917862662116,
+          "id": "5ab3b0bf5542992ade7c6e39:8"
+        },
+        {
+          "title": "Guns N' Roses discography",
+          "score": 37.25740896622546,
+          "id": "5ab3b0bf5542992ade7c6e39:1"
+        },
+        {
+          "title": "Arnold Schwarzenegger filmography",
+          "score": 35.736114998045096,
+          "id": "5ab3b0bf5542992ade7c6e39:0"
+        },
+        {
+          "title": "Get Christie Love!",
+          "score": 34.130989929514215,
+          "id": "5ab3b0bf5542992ade7c6e39:9"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab56e32554299637185c594",
+      "question": "Are Random House Tower and 888 7th Avenue both used for real estate?",
+      "gold": "no",
+      "predict": "Answer: Yes; Random House Tower includes luxury apartments while hosting Real Estate-related entities like Pershing Square Capital Management nearby at similar addresses linked via shared infrastructure goals tied towards optimizing asset portfolios across diverse sectors including industrial/residential/commercial per benchmarking standards outlined in RE Tech definitions provided contextual framework linking these structures' roles",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Random House Tower",
+          "score": 32.99032736993114,
+          "id": "5ab56e32554299637185c594:4"
+        },
+        {
+          "title": "Real estate technology",
+          "score": 28.014505516198966,
+          "id": "5ab56e32554299637185c594:7"
+        },
+        {
+          "title": "Pershing Square Capital Management",
+          "score": 26.448119433401192,
+          "id": "5ab56e32554299637185c594:5"
+        },
+        {
+          "title": "888 7th Avenue",
+          "score": 26.167325095114535,
+          "id": "5ab56e32554299637185c594:3"
+        },
+        {
+          "title": "Real estate benchmarking",
+          "score": 25.423599065989237,
+          "id": "5ab56e32554299637185c594:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab6d09255429954757d337d",
+      "question": "The football manager who recruited David Beckham managed Manchester United during what timeframe?",
+      "gold": "from 1986 to 2013",
+      "predict": "Alex Ferguson (1986–2013).",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Ernest Mangnall",
+          "score": 30.398761883602187,
+          "id": "5ab6d09255429954757d337d:3"
+        },
+        {
+          "title": "Joshua Parlby",
+          "score": 29.909736811126297,
+          "id": "5ab6d09255429954757d337d:0"
+        },
+        {
+          "title": "Matt Busby",
+          "score": 27.898627919559605,
+          "id": "5ab6d09255429954757d337d:8"
+        },
+        {
+          "title": "Sir Matt Busby Sports Complex",
+          "score": 27.37772512779475,
+          "id": "5ab6d09255429954757d337d:2"
+        },
+        {
+          "title": "Alex Ferguson",
+          "score": 27.17217318788898,
+          "id": "5ab6d09255429954757d337d:9"
+        }
+      ]
+    },
+    {
+      "example_id": "5a75e05c55429976ec32bc5f",
+      "question": "Brown State Fishing Lake is in a country that has a population of how many inhabitants ?",
+      "gold": "9,984",
+      "predict": "Answer: United States has approximately 332 million inhabitants as of recent estimates (not explicitly stated in context).",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Brown State Fishing Lake",
+          "score": 45.19610504137651,
+          "id": "5a75e05c55429976ec32bc5f:2"
+        },
+        {
+          "title": "Osage State Fishing Lake",
+          "score": 38.412719138597666,
+          "id": "5a75e05c55429976ec32bc5f:1"
+        },
+        {
+          "title": "Neosho State Fishing Lake",
+          "score": 35.882676813424,
+          "id": "5a75e05c55429976ec32bc5f:3"
+        },
+        {
+          "title": "Shawnee State Fishing Lake",
+          "score": 34.03801247424638,
+          "id": "5a75e05c55429976ec32bc5f:5"
+        },
+        {
+          "title": "Fishing Lake",
+          "score": 32.098147575931364,
+          "id": "5a75e05c55429976ec32bc5f:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab3e45655429976abd1bcd4",
+      "question": "The Vermont Catamounts men's soccer team currently competes in a conference that was formerly known as what from 1988 to 1996?",
+      "gold": "the North Atlantic Conference",
+      "predict": "Answer: None specified",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Vermont Catamounts men's soccer",
+          "score": 63.51832718564818,
+          "id": "5ab3e45655429976abd1bcd4:4"
+        },
+        {
+          "title": "Vermont Catamounts men's basketball",
+          "score": 50.98158899719574,
+          "id": "5ab3e45655429976abd1bcd4:9"
+        },
+        {
+          "title": "Vermont Catamounts men's ice hockey",
+          "score": 45.332343785626236,
+          "id": "5ab3e45655429976abd1bcd4:5"
+        },
+        {
+          "title": "2010–11 Vermont Catamounts men's basketball team",
+          "score": 44.64725898412786,
+          "id": "5ab3e45655429976abd1bcd4:0"
+        },
+        {
+          "title": "2016–17 Vermont Catamounts men's basketball team",
+          "score": 42.099462539572365,
+          "id": "5ab3e45655429976abd1bcd4:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab29c24554299449642c932",
+      "question": "Are Giuseppe Verdi and Ambroise Thomas both Opera composers ?",
+      "gold": "yes",
+      "predict": "Answer: Yes",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Teatro Giuseppe Verdi",
+          "score": 29.598412781147655,
+          "id": "5ab29c24554299449642c932:4"
+        },
+        {
+          "title": "Giuseppe Verdi",
+          "score": 27.656612115196673,
+          "id": "5ab29c24554299449642c932:3"
+        },
+        {
+          "title": "Armand Castelmary",
+          "score": 26.338621152958282,
+          "id": "5ab29c24554299449642c932:6"
+        },
+        {
+          "title": "Ferdinando Provesi",
+          "score": 25.798805465982,
+          "id": "5ab29c24554299449642c932:7"
+        },
+        {
+          "title": "Verdi, the King of Melody",
+          "score": 23.44124767900697,
+          "id": "5ab29c24554299449642c932:9"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae0d4c9554299603e418468",
+      "question": "Roger O. Egeberg was Assistant Secretary for Health and Scientific Affairs during the administration of a president that served during what years?",
+      "gold": "1969 until 1974",
+      "predict": "Answer: During President Richard Nixon's administration (1969–1974).",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Roger O. Egeberg",
+          "score": 73.60286174485887,
+          "id": "5ae0d4c9554299603e418468:8"
+        },
+        {
+          "title": "Douglas J. Bennet",
+          "score": 48.88608819643924,
+          "id": "5ae0d4c9554299603e418468:1"
+        },
+        {
+          "title": "Robert R. Hood",
+          "score": 45.26992105629131,
+          "id": "5ae0d4c9554299603e418468:4"
+        },
+        {
+          "title": "Steven K. Galson",
+          "score": 42.88787488285182,
+          "id": "5ae0d4c9554299603e418468:3"
+        },
+        {
+          "title": "Edward D. Martin",
+          "score": 40.50100153783382,
+          "id": "5ae0d4c9554299603e418468:9"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8133725542995ce29dcbdb",
+      "question": "Which writer was from England, Henry Roth or Robert Erskine Childers?",
+      "gold": "Robert Erskine Childers DSC",
+      "predict": "Answer: Robert Erskine Childers",
+      "em": 0.0,
+      "f1": 0.75,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Erskine Barton Childers",
+          "score": 33.547845544398726,
+          "id": "5a8133725542995ce29dcbdb:8"
+        },
+        {
+          "title": "Robert Erskine Childers",
+          "score": 33.17255212174447,
+          "id": "5a8133725542995ce29dcbdb:6"
+        },
+        {
+          "title": "Molly Childers",
+          "score": 31.615243463245516,
+          "id": "5a8133725542995ce29dcbdb:3"
+        },
+        {
+          "title": "Henry Roth",
+          "score": 30.412077253631054,
+          "id": "5a8133725542995ce29dcbdb:1"
+        },
+        {
+          "title": "Robert Caesar Childers",
+          "score": 29.65298725585366,
+          "id": "5a8133725542995ce29dcbdb:5"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae7a8175542993210983ed8",
+      "question": "Which other Mexican Formula One race car driver has held the podium besides the Force India driver born in 1990?",
+      "gold": "Pedro Rodríguez",
+      "predict": "Answer: Pedro Rodríguez",
+      "em": 0.0,
+      "f1": 0.8,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Formula One drivers from Mexico",
+          "score": 60.15841336087323,
+          "id": "5ae7a8175542993210983ed8:8"
+        },
+        {
+          "title": "Force India VJM04",
+          "score": 56.56876243171965,
+          "id": "5ae7a8175542993210983ed8:6"
+        },
+        {
+          "title": "Eduardo Troconis",
+          "score": 53.03558331975396,
+          "id": "5ae7a8175542993210983ed8:4"
+        },
+        {
+          "title": "2014 Bahrain Grand Prix",
+          "score": 51.31761424218033,
+          "id": "5ae7a8175542993210983ed8:9"
+        },
+        {
+          "title": "2009 Singapore Grand Prix",
+          "score": 48.557248804486434,
+          "id": "5ae7a8175542993210983ed8:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae6050f55429929b0807a5e",
+      "question": "This singer of A Rather Blustery Day also voiced what hedgehog?",
+      "gold": "Sonic",
+      "predict": "Answer: The singer from \"A Rather Blustery Day\" was Jim Cummings who portrayed Winnie-the-Pooh throughout his career per Context 1 & 4-5*. However Context does NOT explicitly link him voicing *any* specific animal/hedgehog species - only non-hedgehog roles like",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "A Rather Blustery Day",
+          "score": 30.289929883091183,
+          "id": "5ae6050f55429929b0807a5e:8"
+        },
+        {
+          "title": "Kate Higgins",
+          "score": 20.518790073596794,
+          "id": "5ae6050f55429929b0807a5e:3"
+        },
+        {
+          "title": "Hip Hip Pooh-Ray!",
+          "score": 18.473434118297412,
+          "id": "5ae6050f55429929b0807a5e:0"
+        },
+        {
+          "title": "Winnie the Pooh and the Blustery Day",
+          "score": 17.81817630811658,
+          "id": "5ae6050f55429929b0807a5e:7"
+        },
+        {
+          "title": "The Rain Rain Rain Came Down Down Down",
+          "score": 17.514031329123746,
+          "id": "5ae6050f55429929b0807a5e:6"
+        }
+      ]
+    },
+    {
+      "example_id": "5adddccd5542997dc7907069",
+      "question": "Aside from the Apple Remote, what other device can control the program Apple Remote was originally designed to interact with?",
+      "gold": "keyboard function keys",
+      "predict": "Answer: A universal remote programmed with appropriate codes for infrared signals used by compatible devices like certain Macs or early-generationApple TVs before 4th generation Siri Remotes became standard.",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Apple Remote",
+          "score": 81.71052707613234,
+          "id": "5adddccd5542997dc7907069:2"
+        },
+        {
+          "title": "Siri Remote",
+          "score": 70.530693947413,
+          "id": "5adddccd5542997dc7907069:3"
+        },
+        {
+          "title": "Universal remote",
+          "score": 55.410222131133544,
+          "id": "5adddccd5542997dc7907069:0"
+        },
+        {
+          "title": "Apple Remote Desktop",
+          "score": 50.055930572041504,
+          "id": "5adddccd5542997dc7907069:9"
+        },
+        {
+          "title": "Remote control",
+          "score": 49.15842052471206,
+          "id": "5adddccd5542997dc7907069:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae2070a5542994d89d5b313",
+      "question": "Which performance act has a higher instrument to person ratio, Badly Drawn Boy or Wolf Alice? ",
+      "gold": "Badly Drawn Boy",
+      "predict": "Answer: Badly Drawn Boy likely has a higher instrument-to-person ratio due to Damon Gough often performing solo/multitasking across multiple devices whereas Wolf Alice has four members specializing in distinct roles without such layered setups.\n</answer>",
+      "em": 0.0,
+      "f1": 0.1621621621621622,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Something to Talk About (Badly Drawn Boy song)",
+          "score": 31.8740561181699,
+          "id": "5ae2070a5542994d89d5b313:3"
+        },
+        {
+          "title": "Under an Hour",
+          "score": 30.19110741962023,
+          "id": "5ae2070a5542994d89d5b313:9"
+        },
+        {
+          "title": "Badly Drawn Boy discography",
+          "score": 28.584176093682604,
+          "id": "5ae2070a5542994d89d5b313:2"
+        },
+        {
+          "title": "Wolf Alice",
+          "score": 28.022747419269898,
+          "id": "5ae2070a5542994d89d5b313:0"
+        },
+        {
+          "title": "Silent Sigh",
+          "score": 27.868919141761744,
+          "id": "5ae2070a5542994d89d5b313:5"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae22b8d554299234fd0440f",
+      "question": "What was the father of Kasper Schmeichel voted to be by the IFFHS in 1992?",
+      "gold": "World's Best Goalkeeper",
+      "predict": "Answer: The father of Kasper Schmeichel (Peter Schmeichel) was voted IFFHS World's Best Goalkeeper in 1992 and again in 1993.",
+      "em": 0.0,
+      "f1": 0.2727272727272727,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Peter Schmeichel",
+          "score": 41.98005742763153,
+          "id": "5ae22b8d554299234fd0440f:2"
+        },
+        {
+          "title": "IFFHS World's Best Club Coach",
+          "score": 32.97830290708091,
+          "id": "5ae22b8d554299234fd0440f:5"
+        },
+        {
+          "title": "Pelé",
+          "score": 32.464644252335,
+          "id": "5ae22b8d554299234fd0440f:4"
+        },
+        {
+          "title": "IFFHS World's Best Goalkeeper",
+          "score": 32.26842791157121,
+          "id": "5ae22b8d554299234fd0440f:6"
+        },
+        {
+          "title": "Kasper Schmeichel",
+          "score": 30.691736948507295,
+          "id": "5ae22b8d554299234fd0440f:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5a722b8655429971e9dc9329",
+      "question": "Who was the writer of These Boots Are Made for Walkin' and who died in 2007?",
+      "gold": "Barton Lee Hazlewood",
+      "predict": "Answer: Lee Hazlewood wrote \"These Boots Are Made for Walkin'\". No individual associated with this song or listed contexts died specifically during this time frame as per provided information.\n</answer>",
+      "em": 0.0,
+      "f1": 0.1212121212121212,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "These Boots Are Made for Walkin'",
+          "score": 42.03723272397471,
+          "id": "5a722b8655429971e9dc9329:7"
+        },
+        {
+          "title": "Puss N' Boots/These Boots Are Made for Walkin'",
+          "score": 40.50961854950345,
+          "id": "5a722b8655429971e9dc9329:8"
+        },
+        {
+          "title": "Boots (EP)",
+          "score": 38.241925324000945,
+          "id": "5a722b8655429971e9dc9329:5"
+        },
+        {
+          "title": "Boots (album)",
+          "score": 38.17805318683171,
+          "id": "5a722b8655429971e9dc9329:6"
+        },
+        {
+          "title": "Kon Kan",
+          "score": 35.07865549220366,
+          "id": "5a722b8655429971e9dc9329:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5adf37a95542995ec70e8f97",
+      "question": "The 2011–12 VCU Rams men's basketball team, led by third year head coach Shaka Smart, represented Virginia Commonwealth University which was founded in what year?",
+      "gold": "1838",
+      "predict": "Answer cannot be determined from provided context; university founding date not mentioned in any text entries for VCU Rams' teams between these years.",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "2011–12 VCU Rams men's basketball team",
+          "score": 89.00636248634986,
+          "id": "5adf37a95542995ec70e8f97:5"
+        },
+        {
+          "title": "2015–16 VCU Rams men's basketball team",
+          "score": 82.06511837964636,
+          "id": "5adf37a95542995ec70e8f97:7"
+        },
+        {
+          "title": "2013–14 VCU Rams men's basketball team",
+          "score": 77.94981925685896,
+          "id": "5adf37a95542995ec70e8f97:4"
+        },
+        {
+          "title": "2012–13 VCU Rams men's basketball team",
+          "score": 76.95411373673988,
+          "id": "5adf37a95542995ec70e8f97:0"
+        },
+        {
+          "title": "2014–15 VCU Rams men's basketball team",
+          "score": 76.69018361997428,
+          "id": "5adf37a95542995ec70e8f97:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5abd259d55429924427fcf1a",
+      "question": "Are both Dictyosperma, and Huernia described as a genus?",
+      "gold": "yes",
+      "predict": "Yes. Both genera are described: Huernia [1] and Dictyosperma [2].",
+      "em": 0.0,
+      "f1": 0.18181818181818182,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Huernia",
+          "score": 27.975391878987633,
+          "id": "5abd259d55429924427fcf1a:1"
+        },
+        {
+          "title": "Dictyosperma",
+          "score": 23.16713776068205,
+          "id": "5abd259d55429924427fcf1a:0"
+        },
+        {
+          "title": "Libocedrus",
+          "score": 17.921176956196714,
+          "id": "5adc53f75542996e6852530a:5"
+        },
+        {
+          "title": "Sphaerotholus",
+          "score": 17.400707248090022,
+          "id": "5a7cbf8c554299452d57b9f4:1"
+        },
+        {
+          "title": "Ferocactus",
+          "score": 16.688678676015403,
+          "id": "5a8e068b5542995085b37384:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5a828c8355429966c78a6a50",
+      "question": "Kaiser Ventures corporation was founded by an American industrialist who became known as the father of modern American shipbuilding?",
+      "gold": "Henry J. Kaiser",
+      "predict": "Answer: Yes, Henry J. Kaiser founded Kaiser Ventures (formerly Kaiser Steel), and he is known as the father of modern American shipbuilding for establishing the Kaiser Shipyards during WWII.",
+      "em": 0.0,
+      "f1": 0.19999999999999998,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Henry J. Kaiser",
+          "score": 50.01262106853185,
+          "id": "5a828c8355429966c78a6a50:6"
+        },
+        {
+          "title": "Edgar Kaiser Sr.",
+          "score": 42.80174050874937,
+          "id": "5a828c8355429966c78a6a50:9"
+        },
+        {
+          "title": "Kaiser Ventures",
+          "score": 42.53504885289289,
+          "id": "5a828c8355429966c78a6a50:5"
+        },
+        {
+          "title": "Kaiser Shipyards",
+          "score": 40.25197306830665,
+          "id": "5a828c8355429966c78a6a50:4"
+        },
+        {
+          "title": "Eagle Mountain Railroad",
+          "score": 35.546514651694366,
+          "id": "5a828c8355429966c78a6a50:2"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8a3e745542996c9b8d5e70",
+      "question": "What is the name for the adventure in \"Tunnels and Trolls\", a game designed by Ken St. Andre?",
+      "gold": "Arena of Khazan",
+      "predict": "Answer: There is no specific adventure name mentioned in the provided context for \"Tunnels & Trolls.\"",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Tunnels & Trolls",
+          "score": 70.20253370093997,
+          "id": "5a8a3e745542996c9b8d5e70:1"
+        },
+        {
+          "title": "Ken St. Andre",
+          "score": 53.04138449984709,
+          "id": "5a8a3e745542996c9b8d5e70:4"
+        },
+        {
+          "title": "Tunnels & Trolls: Crusaders of Khazan",
+          "score": 45.25974136606285,
+          "id": "5a8a3e745542996c9b8d5e70:9"
+        },
+        {
+          "title": "Mercenaries, Spies and Private Eyes",
+          "score": 41.26167973258757,
+          "id": "5a8a3e745542996c9b8d5e70:5"
+        },
+        {
+          "title": "Starfaring",
+          "score": 40.56638870306148,
+          "id": "5a8a3e745542996c9b8d5e70:6"
+        }
+      ]
+    },
+    {
+      "example_id": "5ac23ff0554299636651994d",
+      "question": "When was Poison's album \"Shut Up, Make Love\" released?",
+      "gold": "2000",
+      "predict": "Answer: March 14, 2000 (from *Crack a Smile...and More!*)",
+      "em": 0.0,
+      "f1": 0.2222222222222222,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Shut Up, Make Love",
+          "score": 45.048788625385534,
+          "id": "5ac23ff0554299636651994d:9"
+        },
+        {
+          "title": "Be the One (Poison song)",
+          "score": 36.57192808718304,
+          "id": "5ac23ff0554299636651994d:1"
+        },
+        {
+          "title": "Mind If We Make Love to You",
+          "score": 22.9664195456674,
+          "id": "5ac23ff0554299636651994d:8"
+        },
+        {
+          "title": "All I Wanna Do Is Make Love to You",
+          "score": 20.74571688466441,
+          "id": "5ac23ff0554299636651994d:0"
+        },
+        {
+          "title": "The Longer We Make Love",
+          "score": 19.904494551161797,
+          "id": "5ac23ff0554299636651994d:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae4a3265542995ad6573de5",
+      "question": "Hayden is a singer-songwriter from Canada, but where does Buck-Tick hail from?",
+      "gold": "Fujioka, Gunma",
+      "predict": "Answer: Japan",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Atsushi Sakurai",
+          "score": 31.503570111799352,
+          "id": "5ae4a3265542995ad6573de5:0"
+        },
+        {
+          "title": "Hayden (musician)",
+          "score": 29.553725187166528,
+          "id": "5ae4a3265542995ad6573de5:1"
+        },
+        {
+          "title": "Mild and Hazy",
+          "score": 27.00913437424093,
+          "id": "5ae4a3265542995ad6573de5:3"
+        },
+        {
+          "title": "Kyo (musician)",
+          "score": 26.153249773030456,
+          "id": "5ae4a3265542995ad6573de5:8"
+        },
+        {
+          "title": "Masami Tsuchiya",
+          "score": 25.125352489788348,
+          "id": "5ae4a3265542995ad6573de5:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5ae0361155429925eb1afc2c",
+      "question": "Which  French ace pilot and adventurer fly L'Oiseau Blanc",
+      "gold": "Charles Eugène",
+      "predict": "Answer: Charles Nungesser",
+      "em": 0.0,
+      "f1": 0.4,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "François Coli",
+          "score": 43.03203509971183,
+          "id": "5ae0361155429925eb1afc2c:0"
+        },
+        {
+          "title": "L'Oiseau Blanc",
+          "score": 31.255230192315096,
+          "id": "5ae0361155429925eb1afc2c:9"
+        },
+        {
+          "title": "Charles Nungesser",
+          "score": 29.77118155892684,
+          "id": "5ae0361155429925eb1afc2c:3"
+        },
+        {
+          "title": "W. E. Johns",
+          "score": 27.219375705251274,
+          "id": "5ae0361155429925eb1afc2c:2"
+        },
+        {
+          "title": "Gervais Raoul Lufbery",
+          "score": 25.318284919927063,
+          "id": "5ae0361155429925eb1afc2c:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5abc0a5d5542993f40c73c64",
+      "question": "Are Freakonomics and In the Realm of the Hackers both American documentaries?",
+      "gold": "no",
+      "predict": "Answer: No. \"In the Realm of the Hackers\" (Australian) and \"Freakonomics: The Movie\" (American) are different; only Freakonomics is an American documentary.",
+      "em": 0.0,
+      "f1": 0.10526315789473684,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "In the Realm of the Hackers",
+          "score": 33.47314602865657,
+          "id": "5abc0a5d5542993f40c73c64:7"
+        },
+        {
+          "title": "Hackers (film)",
+          "score": 27.060919605577155,
+          "id": "5abc0a5d5542993f40c73c64:0"
+        },
+        {
+          "title": "Freakonomics (film)",
+          "score": 26.43617110867071,
+          "id": "5abc0a5d5542993f40c73c64:8"
+        },
+        {
+          "title": "Freakonomics Radio",
+          "score": 25.06202639489998,
+          "id": "5abc0a5d5542993f40c73c64:1"
+        },
+        {
+          "title": "Birthday Honours",
+          "score": 24.94379648690715,
+          "id": "5a7625e8554299109176e66a:4"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7cc50e554299452d57ba3e",
+      "question": "Which band, Letters to Cleo or Screaming Trees, had more members?",
+      "gold": "Letters to Cleo",
+      "predict": "Answer: Letters to Cleo had more members with 7 compared to Screaming Trees' core group of 4-5 throughout their careers based on provided contexts.\n</think>\nAnswer: Letters to Cleo had more members with 7 compared to Screaming Trees' core group of 4-5 throughout their",
+      "em": 0.0,
+      "f1": 0.1276595744680851,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Letters to Cleo",
+          "score": 32.80218690306959,
+          "id": "5a7cc50e554299452d57ba3e:0"
+        },
+        {
+          "title": "Screaming Trees discography",
+          "score": 27.071950538142655,
+          "id": "5a7cc50e554299452d57ba3e:8"
+        },
+        {
+          "title": "Screaming Trees",
+          "score": 25.526978169257298,
+          "id": "5a7cc50e554299452d57ba3e:7"
+        },
+        {
+          "title": "Truly",
+          "score": 21.80703839376232,
+          "id": "5a7cc50e554299452d57ba3e:1"
+        },
+        {
+          "title": "Van Conner",
+          "score": 21.15273256845947,
+          "id": "5a7cc50e554299452d57ba3e:9"
+        }
+      ]
+    },
+    {
+      "example_id": "5abf63f15542997ec76fd3ea",
+      "question": "Alexander Kerensky was defeated and destroyed by the Bolsheviks in the course of a civil war that ended when ?",
+      "gold": "October 1922",
+      "predict": "Answer: October 1922",
+      "em": 0.0,
+      "f1": 0.8,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Socialist Revolutionary Party",
+          "score": 52.49562733971569,
+          "id": "5abf63f15542997ec76fd3ea:0"
+        },
+        {
+          "title": "Alexander Kerensky",
+          "score": 43.24813928602505,
+          "id": "5abf63f15542997ec76fd3ea:9"
+        },
+        {
+          "title": "Lavr Kornilov",
+          "score": 42.24099150690784,
+          "id": "5abf63f15542997ec76fd3ea:2"
+        },
+        {
+          "title": "Kerensky–Krasnov uprising",
+          "score": 39.65455037505089,
+          "id": "5abf63f15542997ec76fd3ea:6"
+        },
+        {
+          "title": "Russian Civil War",
+          "score": 39.22104230632232,
+          "id": "5abf63f15542997ec76fd3ea:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8ef2a75542995a26add583",
+      "question": "Seven Brief Lessons on Physics was written by an Italian physicist that has worked in France since what year?",
+      "gold": "2000",
+      "predict": "Answer: 2000",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Seven Brief Lessons on Physics",
+          "score": 57.00022161005766,
+          "id": "5a8ef2a75542995a26add583:9"
+        },
+        {
+          "title": "Carlo Rovelli",
+          "score": 29.948532284268605,
+          "id": "5a8ef2a75542995a26add583:5"
+        },
+        {
+          "title": "Guido Caldarelli",
+          "score": 25.360427864582782,
+          "id": "5a8ef2a75542995a26add583:0"
+        },
+        {
+          "title": "Chiara Nappi",
+          "score": 24.366341750509108,
+          "id": "5a8ef2a75542995a26add583:6"
+        },
+        {
+          "title": "Enrico Fermi",
+          "score": 23.73778242956152,
+          "id": "5a8ef2a75542995a26add583:2"
+        }
+      ]
+    },
+    {
+      "example_id": "5a80721b554299485f5985ef",
+      "question": "The Livesey Hal War Memorial commemorates the fallen of which war, that had over 60 million casualties?",
+      "gold": "World War II",
+      "predict": "Answer: World War II",
+      "em": 0.0,
+      "f1": 0.8571428571428571,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Livesey Hall War Memorial",
+          "score": 57.400422526570765,
+          "id": "5a80721b554299485f5985ef:0"
+        },
+        {
+          "title": "Rainham War Memorial",
+          "score": 44.975351663718065,
+          "id": "5a80721b554299485f5985ef:2"
+        },
+        {
+          "title": "World War II casualties",
+          "score": 44.01558101569334,
+          "id": "5a80721b554299485f5985ef:9"
+        },
+        {
+          "title": "Freetown Memorial",
+          "score": 42.579856247128376,
+          "id": "5a80721b554299485f5985ef:4"
+        },
+        {
+          "title": "Masnières Newfoundland Memorial",
+          "score": 38.58200761628141,
+          "id": "5a80721b554299485f5985ef:8"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab51dae5542991779162d82",
+      "question": "Are both Elko Regional Airport and Gerald R. Ford International Airport located in Michigan?",
+      "gold": "no",
+      "predict": "No, only Gerald R. Ford International Airport (Michigan) is located there; Elko Regional Airport is in Nevada (Elko County).",
+      "em": 0.0,
+      "f1": 0.1,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Gerald R. Ford International Airport",
+          "score": 54.339537285190055,
+          "id": "5ab51dae5542991779162d82:3"
+        },
+        {
+          "title": "Elko Regional Airport",
+          "score": 46.15766234783513,
+          "id": "5ab51dae5542991779162d82:2"
+        },
+        {
+          "title": "Grantley Adams International Airport",
+          "score": 40.12696445252497,
+          "id": "5ab51dae5542991779162d82:0"
+        },
+        {
+          "title": "Gerald R. Ford Freeway",
+          "score": 39.42562079417399,
+          "id": "5ab51dae5542991779162d82:8"
+        },
+        {
+          "title": "Bishop International Airport",
+          "score": 39.27314658556973,
+          "id": "5ab51dae5542991779162d82:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7571135542992d0ec05f98",
+      "question": "Ralph Hefferline was a psychology professor at a university that is located in what city?",
+      "gold": "New York City",
+      "predict": "Answer: New York City",
+      "em": 0.0,
+      "f1": 0.8571428571428571,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Ralph Hefferline",
+          "score": 53.408262559317535,
+          "id": "5a7571135542992d0ec05f98:7"
+        },
+        {
+          "title": "Princeton Neuroscience Institute",
+          "score": 33.134261092364376,
+          "id": "5a7571135542992d0ec05f98:0"
+        },
+        {
+          "title": "Kimberly Young",
+          "score": 30.45040942118586,
+          "id": "5a7571135542992d0ec05f98:4"
+        },
+        {
+          "title": "E. Mavis Hetherington",
+          "score": 29.27583955887228,
+          "id": "5a7571135542992d0ec05f98:3"
+        },
+        {
+          "title": "Abraham Maslow",
+          "score": 27.32874387000244,
+          "id": "5a7571135542992d0ec05f98:2"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7a0e1e5542990783324e1a",
+      "question": "Which dog's ancestors include Gordon and Irish Setters: the Manchester Terrier or the Scotch Collie?",
+      "gold": "Scotch Collie",
+      "predict": "Answer: Scotch Collie",
+      "em": 0.0,
+      "f1": 0.8,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Scotch Collie",
+          "score": 67.91265663738558,
+          "id": "5a7a0e1e5542990783324e1a:7"
+        },
+        {
+          "title": "English Setter",
+          "score": 40.98875144269729,
+          "id": "5a7a0e1e5542990783324e1a:3"
+        },
+        {
+          "title": "Feist (dog)",
+          "score": 36.95664721357732,
+          "id": "5a7a0e1e5542990783324e1a:2"
+        },
+        {
+          "title": "Toy Manchester Terrier",
+          "score": 36.67827054535866,
+          "id": "5a7a0e1e5542990783324e1a:8"
+        },
+        {
+          "title": "Manchester Terrier",
+          "score": 35.12145798670905,
+          "id": "5a7a0e1e5542990783324e1a:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5a74106b55429979e288289e",
+      "question": "Where is the company that Sachin Warrier worked for as a software engineer headquartered? ",
+      "gold": "Mumbai",
+      "predict": "Answer: Tata Consultancy Services (TCS), headquartered in Mumbai.",
+      "em": 0.0,
+      "f1": 0.2222222222222222,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Sachin Warrier",
+          "score": 38.43830764250653,
+          "id": "5a74106b55429979e288289e:4"
+        },
+        {
+          "title": "William Connolley",
+          "score": 31.957530070357215,
+          "id": "5a74106b55429979e288289e:2"
+        },
+        {
+          "title": "Alec Muffett",
+          "score": 30.058103291048695,
+          "id": "5a74106b55429979e288289e:8"
+        },
+        {
+          "title": "Wes McKinney",
+          "score": 28.269652572711585,
+          "id": "5a74106b55429979e288289e:3"
+        },
+        {
+          "title": "Sachin Bansal",
+          "score": 28.163932718410155,
+          "id": "5a74106b55429979e288289e:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5a79311755429970f5fffe67",
+      "question": "A Japanese manga series based on a 16 year old high school student Ichitaka Seto, is written and illustrated by someone born in what year?",
+      "gold": "1962",
+      "predict": "Answer cannot be determined from provided context; no author/birth year data is given for \"I\"s (Masakazu Katsura).",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "I\"s",
+          "score": 71.67104951415884,
+          "id": "5a79311755429970f5fffe67:9"
+        },
+        {
+          "title": "The Kindaichi Case Files",
+          "score": 54.11513434296211,
+          "id": "5a79311755429970f5fffe67:8"
+        },
+        {
+          "title": "Neuro: Supernatural Detective",
+          "score": 49.301448064339574,
+          "id": "5a79311755429970f5fffe67:2"
+        },
+        {
+          "title": "Haven't You Heard? I'm Sakamoto",
+          "score": 49.17698381664086,
+          "id": "5a79311755429970f5fffe67:3"
+        },
+        {
+          "title": "Silver Spoon (manga)",
+          "score": 48.57604023110064,
+          "id": "5a79311755429970f5fffe67:6"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab2d3df554299194fa9352c",
+      "question": "The battle in which Giuseppe Arimondi lost his life secured what for Ethiopia?",
+      "gold": "sovereignty",
+      "predict": "The Battle of Adwa secured Ethiopian sovereignty against Italian invasion during the First Italo-Ethiopian War. Giuseppe Arimondi, an Italian general who fought there, died in combat on March 1, 1896.",
+      "em": 0.0,
+      "f1": 0.07142857142857142,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Battle of Adwa",
+          "score": 26.651150760758295,
+          "id": "5ab2d3df554299194fa9352c:5"
+        },
+        {
+          "title": "Giuseppe Arimondi",
+          "score": 25.772957856391397,
+          "id": "5ab2d3df554299194fa9352c:7"
+        },
+        {
+          "title": "Ethiopia–Japan relations",
+          "score": 22.169310052844565,
+          "id": "5ab2d3df554299194fa9352c:1"
+        },
+        {
+          "title": "Ephigenia of Ethiopia",
+          "score": 21.308765529993263,
+          "id": "5ab2d3df554299194fa9352c:3"
+        },
+        {
+          "title": "Giuseppe Verdi (film)",
+          "score": 21.300049298282485,
+          "id": "5ab29c24554299449642c932:1"
+        }
+      ]
+    },
+    {
+      "example_id": "5a760ab65542994ccc918697",
+      "question": "Alfred Balk served as the secretary of the Committee on the Employment of Minority Groups in the News Media under which United States Vice President?",
+      "gold": "Nelson Rockefeller",
+      "predict": "Answer: None; Alfred Balk served under New York Governor Nelson Rockefeller during his tenure with that specific committee.\n</think>\nAnswer: None; Alfred Balk served under New York Governor Nelson Rockefeller during his tenure with that specific committee.\n</answer>",
+      "em": 0.0,
+      "f1": 0.1,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Alfred Balk",
+          "score": 72.6886294823558,
+          "id": "5a760ab65542994ccc918697:8"
+        },
+        {
+          "title": "Cynthia Hogan",
+          "score": 52.09871476337154,
+          "id": "5a760ab65542994ccc918697:0"
+        },
+        {
+          "title": "Gerald Ford",
+          "score": 51.47960844703831,
+          "id": "5a760ab65542994ccc918697:1"
+        },
+        {
+          "title": "Gordon Johndroe",
+          "score": 48.00758706517327,
+          "id": "5a760ab65542994ccc918697:9"
+        },
+        {
+          "title": "Executive Order 10925",
+          "score": 47.69705451539695,
+          "id": "5a760ab65542994ccc918697:5"
+        }
+      ]
+    },
+    {
+      "example_id": "5a7d54165542995f4f402256",
+      "question": "A medieval fortress in Dirleton, East Lothian, Scotland borders on the south side of what coastal area?",
+      "gold": "Yellowcraig",
+      "predict": "Okay, let's tackle this question. The user is asking about a medieval fortress in Dirleton, East Lothian, Scotland, and specifically wants to know which coastal area it borders on the south side.\n\nFirst, I need to identify the medieval fortress mentioned. Looking at the context provided, [1] talks about Dirleton Castle. That's the fortress in question. Now, the question is about the coastal area to the south of this castle.\n\nNext, check the context for any mention of coastal areas near Dirleton. The relevant sections would be [3] and maybe [2]. Let's look at [3]: Yellowcraig is described as a coastal area in East Lothian. It mentions that Yellowcraig is bordered to the south by Dirleton and Dirleton Castle. Wait, that seems contradictory because if Yellowcraig is bordered to the south by Dirleton Castle, then the castle would be north of Yellowcraig. But the question states that the castle borders on the south side of a coastal area.\n\nHmm, maybe I need to parse that again. The content says: \"Yellowcraig... is bordered to the north by the Firth of Forth... to the south by the village of Dirleton and Dirleton Castle.\" So Yellowcraig is south of Dirleton Castle? Wait, no—if something is bordered to the south by another place or structure, that means those are on its southern side. So if Yellowcraig is bordered to the south by Dirleton and its castle, then Yellowcraig would be north of those? That doesn't make sense geographically because typically a border to the south would mean that thing is north of it.\n\nWait, maybe I'm getting confused with directions here. Let me visualize this. If you have a coastal area (Yellowcraig) and it's bordered to the north by Firth of Forth (a sea), then moving south from there would be towards land. The content says Yellowcrag's southern border is Dirleton village and Dirleton Castle. So that means when you go from North Berwick towards East Lothian (since Dirleton is 2 miles west of North Berwick), you pass through areas leading up to Yellowcrag on one side and then down towards South? Wait, perhaps I should think in terms of map directions.\n\nAlternatively, maybe there's another way. The question states that a medieval fortress (Dirleton Castle) borders on its southern side a coastal area. So we need a coastal area that has its northern border at Dirleton Castle.\n\nLooking back at context [3], it says: \"Yellowcraigs...to the south by...Dir尔顿 Castle.\" Wait no—the exact wording: \"to the south by ...Dir尔顿 village and Dir尔顿 Castle.\" So if Yellowcraigs' southern boundary includes both village and castle, then those are located north of Yellowcraigs? Because if something is bordered on its southern side by another place/structure, those are located further north.\n\nSo for example: If Point A has a border on its east side with Point B, then Point B is eastward from Point A? No—actually, if Point A has an eastern border with Point B's western border. So direction depends on how they're adjacent.\n\nIn this case: \"borders to ...south\" means that when looking at Yellowcraigs from above (on a map), their southern edge touches where? If something borders南部 (south) of another place/area/structure，then it must be located north relative to them.\n\nWait no—if Area X has a border on its southern side with Area Y or Structure Z，then Area Y or Z must be located immediately northward from Area X's南部边界。So for example，if my house borders your house on my west side，your house is eastward from mine.\n\nSo applying this: If Yellowcraigs' southern boundary includes both Dir尔顿村和城堡，那么Dir尔顿城堡位于Yellowcraigs的北部。因此，问题中的城堡（Dir尔顿）位于该海岸地区的北部，而海岸地区是南边被城堡和村庄所界定的。\n\nBut wait，问题问的是“the medieval fortress in Dirleton... borders on its南部 what coastal area?”也就是城堡的南部边界的沿海地区是什么？\n\n根据上下文[3]，黄蟹角（Yellowcrag）的南部边界是Dir尔顿村和城堡。所以这意味着当站在黄蟹角的位置时，往南走会遇到Dir尔顿村和城堡。因此，黄蟹角位于北边，而Dir尔顿及其城堡位于其南边？这似乎矛盾。\n\n或者可能我理解反了方向。比如，“borders”到某个方向的描述可能需要更仔细的分析。\n\n再仔细看[3]的内容：\n\n\"Yellow craigs...is bordered...to the south by ...the village of Diroldemort and Diroldemort Castle.\"\n\n所以如果黄蟹角的南侧边界是Diroldemort村和城堡的话，那么这些村庄和城堡应该位于黄蟹角的北侧。也就是说，黄蟹角在它们的南方。因此问题中的情况是：用户问的是这个中世纪要塞（DiroldemortCastle）的南侧有什么沿海地区？\n\n根据这个信息，答案应该是：该要塞位于黄蟹角的北侧？但用户的问题是要塞南侧的海岸地区是什么？\n\n这时候可能需要重新审视上下文是否正确对应。\n\n或者可能我搞错了方向。例如，“bordered to 南部”意味着该区域在要塞的南方？比如：如果A被B的北部所界定，那么B在A的北方。\n\n所以如果Y（黄蟹角）被D（Diroldemort）及其村庄和城堡界定在南方的话，那么D是在Y的北方？即Y位于D的南方？\n\n但用户的问题是说这个中世纪要塞（D）南侧的海岸地区是什么？\n\n根据[3]，Y的黄蟹角被其南侧由D村和D堡界定。所以D的位置是在Y的北侧吗？或者说Y在D的南侧？\n\n这里可能存在地理上的混淆。例如：\n\n假设地图上从西向东为X轴正方向（东），北为+Y轴正方向。\n\n如果Y的黄蟹角的南侧边界是D村和堡的话，那么D的位置应该在Y的黄蟹角的正北方吗？或者相反？\n\n不，“bordered”到某个方向的描述通常是指该区域在该方向的边缘有另一个区域或结构存在。\n\n例如：“The park borders onto my house.” 这里的意思是公园与我的房子相邻。\n\n具体到“borders 南部”的情况：\n\n如果A地区的南部边界与B地区的北部边界相连的话，“A borders 南部 with B” 或者 “A’s 南部由B构成”。\n\n所以在这种情况下，“Yellow craigs...is bordered 南部by D village and D castle”，说明当站在Y的黄蟹角时往南走会遇到D村和堡。因此D的位置是在Y的黄蟹角的南方吗？这显然不对地理常识来说——因为通常村庄或建筑不会建在海边的沙滩上作为另一个区域的南部边界。\n\n或者更准确地说：当描述一个区域的某个方向被另一个地点或区域所界定时，“bordered 南部by”意味着该区域的最南端与那个地点相邻。例如：我的国家的南部边境与邻国接壤。\n\n因此在这种情况下，“Yellow craigs 的南部由 D 村庄和 D 堡垒构成”，意味着 D 村庄和堡位于 Y 黄蟹角的正南方吗？或者说 Y 的最南端与 D 相邻？\n\n如果是这样的话，那么问题中的中世纪堡垒（即 D 堡垒）位于 Y 黄蟹角的北侧吗？因为 Y 的最南端是 D 的位置？\n\n这时候用户的问题是说这个堡垒（D）向南边有什么海岸地区？\n\n根据上面的分析：如果 Y 黄蟹角的最南端是 D 村庄及堡所在的位置的话，那说明 Y 在 D 的北方。也就是说 D 位于 Y 的南方？这有点混乱。\n\n或许需要更仔细地分析地理位置：\n\n根据[1]，Dirleston Castle lies around 2 miles west of North Berwick (which is in East Lothian). Also mentioned in [1] that it was abandoned end 17th century.\n\nFrom [3], Yellowcraigs' boundaries:\n\n- 北部：Firth Of Forth\n\n- 南部：Dirleston Village 和 Castles\n\n- 东部：North Berwick West Links golf course\n\n- 西侧：Archerfield Estate 和 Links golf courses\n\n这说明整个Yellowcraigs区域位于北部的Firth Of Forth海、东部的北伯威克西林口高尔夫球场、西侧阿彻菲尔德庄园等之间。而它的最南端则与Dirleston村庄及城堡相邻。\n\n因此地图上大概是这样的布局：\n\nFirth Of Forth （北部）\n\n|\n\n|\n\n|\n\n然后到South的方向就是到达黄色螃蟹区(Yellowcraigs)的最南端点——那里有dirleston村庄和城堡。\n\n所以整个黄色螃蟹区(Yellowcraigs)应该是在北部的Forth海湾附近的一个沿海森林、沙滩等地形的地方。而它的最南端接壤dirleston村庄及城堡所在的位置。\n\n现在问题是问这个中世纪堡垒所在的dirleston村的南侧有什么海岸地区？\n\n根据上面的信息,Yellow CRAIGS 是一个沿海区域（因为它的北部被Forth海湾包围），并且它的最南端接壤dirleston villages以及castles所在的地点。也就是说 dirleston villages 和 castles 位于 yellow craigslist的最南方位置附近?\n\n如果是这样的话,yellow craigslist作为沿海区域,Y dirleston villages/castles在其最南端的内侧还是外侧呢?\n\n这里可能需要更仔细地理解地理关系：\n\n假设地图大致如下：\n\n从北向南排列：\n\nFirth Of Forth （北部）\n\n|\n\n|\n\n|\n\n然后是黄色螃蟹区(Yellow CRAIGS)，其北部被Forth海湾包围，\n\n向南延伸到某个点，\n\n而这个点的位置就是dirleston villages以及castles所在的地方，\n\n也就是 dirleston castle 位于 yellow craigslist的最南侧边界处，\n\n或者说 yellow craigslist 在 dirleston castle 的东侧或附近？\n\n但根据上下文中的描述：\"to the south by ...the village of diroldemort and diroldemort castle\"\n\n这说明当站在yellow craigslist的时候往南走会到达dirkowski村庄及堡的位置，\n\n即 yellow craigslist 在 dirkowski村的北方,\n\n而 dirkowski村及堡在其南方,\n\n同时整个yellow craigslist是一个沿海区域,\n\n因为它向北面有firth forth,\n\n向东面有north berwick west links golf course,\n\n向西面有archerfield estate等,\n\n向南面则延伸到dirkowski村庄及堡所在的位置,\n\n这可能意味着yellow craigslist是一个从北部的firth forth向东南延伸的区域,\n\n直到遇到dirkowski村庄及堡所在的地点,\n\n此时该堡所在的地理位置是在yellow craigslist的最南侧边缘处,\n\n因此问题中的中世纪堡垒(即dirkowski castle)向南面的coastal area是什么?\n\n根据上面的分析,yellow CRAIGS 是一个沿海区域(因为其北部被forth海湾包围),\n\n并且其最南站界就是dirkowski villages/castles所在的位置,\n\n所以可以推断出:\n\n这个中世纪堡垒(在yellow CRAIGS的最南站界处)向南并没有更多的coastal region了，\n\n因为yellow CRAIGS本身已经是一个靠近海岸的地区了，\n\n或者是否有可能存在其他coastal region?\n\n但根据提供的上下文信息中没有提到其他更大的coastal region靠近那里，\n\n只有提到的yellow CRAIGS作为coastal area存在，\n\n并且它被多个自然或人工结构所包围，\n\n其中南部边界是与dirkowski相关的地点相接,\n\n所以答案应该是yellow CRAIGS ?\n\n但是问题问的是“the medieval fortress in diroldemort,bordering on its own southerly coast what?”\n\n也就是要找出该堡垒自身向南边的coastal region名称是什么?\n\n根据上下文[3], 当提到yellowCraig的时候说它被四个方向的东西所包围:\n\n- 北部: Firth Of Forth\n\n- 南部: Village And Castle\n\n- 东部: Golf Course\n\n- 西侧: Another Golf Course\n\n这里的“south”指的是yellow Craig’s 最南站界处连接着village 和castle所在的位置,\n\n也就是说,yellow Craig’s 是一个沿海区域(因为它向北面对着firth forth),\n\n而在这个区域的正南方则是village 和castle所在的地方,\n\n但此时village 和castle是否属于另一个coastal region呢?\n\n或者是否village itself处于coastal region之外的内陆位置?\n\n可能需要进一步确认地理关系:\n\n假设整个情况是这样的:\n\n从北到南:\n\n1st layer: Firth Of Forth (sea)\n\n2nd layer: yellow Craig’s (beach forest etc.)\n\n3rd layer: Southwards here comes land with villages like diroldemort where there's also castles built inland away from coast?\n\n如果是这样,yellow Craig’s 是一个临海的内陆部分还是外海部分呢?\n\n或者可能反过来,yellow Craig’s 是临海的沙滩地带,yourtherwards内陆有village等地方.\n\n在这种情况下,village 和castle位于yelllowCraig’s的正南方(即yelllowCraig’s的最南站界),\n\n那么对于这个问题来说,\"the medieval fortress in diroldemort\"即指castle located within or near village which itself lies just north/south ?\n\n这里可能有些混乱需要理清:\n\n问题中的medieval fortress是_dirilton_ castile_ ,它位于东洛斯丹郡的_dirilton_村内吗？（是的）\n\n然后问这个castile向南边的coastal area是什么名字?\n\n根据上下文[3], 这个castile所在的village以及castle本身构成了yelllowCraigs区域的南部边界,\n\n也就是说,yelllowCraigs区域的南部边缘就是这些地方(your village + castile),\n\n反过来就是说,yelllowCraigs 区域在铸币厂的正北方还是正南方呢?\n\n假设地图大致如下:\n\n朝东的方向为右方:\n\nNorth Berwick West Links Golf Course |东部\n\nArcherfield Estate |西侧\n\nSouthwards direction leads towards your village(Dirilton)and castile(DiriltonCastle)\n\n同时,YellowCraigs作为一个沿海区域(North facing firth forth),其东南侧可能有其他结构吗?\n\n不过关键点是[yelllowCraigs]的区域向南路是由village和castle组成的线段构成的边境线.\n\n这意味着铸币厂(village + castle)处于yelllowCraigs区域的正南方吗？\n\n如果是这样,yelllow Craig’s 区域实际上是在铸币厂的正北方 ?\n\n那这样的话铸币厂(Dirilton及其Castile)位于yelllow Craig’s的正南方 ?\n\n那问题就变成铸币厂(Dirilton及其Castile)的正南方有没有什么coastal area ?\n\n但按照上下文的信息来看,YellowCraigs的区域本身已经是一个临海的区域了(因为它向北面对着firth forth).\n\n所以铸币厂(Dirilton及其Castile)应该是在yelllow Craig’s的正东方还是东南方呢 ?\n\n另外还需要考虑地理位置的其他线索：\n\nContext[1]提到Castile lies around 2 miles west of North Berwick,...\n\nContext[3]提到North Berwick West Links golf course东部,YellowCraigs西部是Archerfield Estate等,golf courses通常建在海滨附近用于观景,...\n\n同时,YellowCraids的海岸线可能在它的西部或东部 ?\n\n不过回到原题的问题核心：\n\n用户的问题是关于中世纪要塞所在的_dirilton_村的正 Southern 方向有什么Coastal Area ?\n\n根据context[3], 这个Coastal Area就是YellowCraids itself ? 因为当你说铸币厂的South边有一个Coastal Area时,YellowCraids作为临海地带可能在铸币厂的Southside ?\n\n但是按照之前的分析,YellowCraids的区域是被其南北两侧的结构所界定:\n\nNorth boundary : Firth Of Forth (sea)\n\nSouth boundary : Village And Castile\n\nEast boundary : Golf Course near North Berwick West Links\n\nWest boundary : Archerfield Estate etc...\n\n这意味着整个YellowCraids是一个四边形形状的区域,North边靠海,Fouth海湾; South边靠Village And Castile; East边靠高尔夫球场; West边靠庄园和高尔夫球场.\n\n因此在这个情况下,Castile 所处的位置是在YellowCraids的正 South 边界的线上吗 ?\n\n如果是这样,Castile就紧邻着YellowCraids区域的 South 边界线,\n\n那么对于Castile来说(Southern 方向),它所处的位置就是紧邻着这个Coastal Area(YellowCraids).\n\n但是问题是这样的：\"the medieval fortress in dir튼ton,bordering on its own southerly coast what?\"\n\n也就是要找出该要塞自己的 Southern 边界的Coastal Area名称是什么 ?\n\n如果Castile处于Village里面的话(Village And Castle together form part of South boundary for Yellow Craughts),\n\n那么Castle本身的 Southern 方向是否有其他Coастаl Areas呢 ? 根据现有信息没有提到更大的 Coastal Areas beyond this point.\n\n或许正确的答案是黄色螃蟹区(Yellow Craughts)，因为虽然它处于较北的位置(相对于某些地方而言)，但在Context[3]中被明确称为一个 Coastal Areas的一部分(\"partly within FSSSI\")且其North boundary是Forth sea,Bordering于Sea itself可能是最大的 Coastal Areas在这里指的是自己所在的那个海域的一部分 ?\n\n或者是否存在其他可能的Coастаl Areas名称没有被直接提及但在Context中有线索指向的可能？\n\n再检查所有提供的context内容是否有遗漏的信息：\n\nContext[5]: 提到了Direction Kirk的具体坐标和其他细节但不涉及海岸线;\n\nContext[4]: Scottish Borders administrative region,bordering various places but not directly related;\n\nContext[2]:Lothan & Borders regions including East Lothan where all these locations are;\n\nTherefore唯一提到的Coастаl Areas就是 contexts中的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到了 context [3]中的黄色螃蟹区(Yellow Craughts).\n\nTherefore答案应该是黄色螃蟹区(Yellow Craughts).\n\n不过需要确认是否正确对应关系：\n\nBecause according to context [3], when you go South from yellow cрагgс you reach dирльтон и его замок и деревню — это значит что замок находится на границе с黄色的螃蟹区 в юго-западной части黄色的螃蟹区的 границе на юге ? 或者 как это работает...\n\nAlternatively perhaps there was confusion between 'south' as being adjacent versus being positioned further along latitude lines.\n\nAnother approach could be using coordinates or distances mentioned elsewhere but not sure if needed here.\n\nAlternatively perhaps considering that since yellow cрагgс has northern border as firth forth which connects into larger sea areas like North Sea or English Channel but since it's called an SSSI site due partly being within firth forth SSSI which implies it's part of an important ecological coastal zone there might not be another named coastal area beyond what's stated here except possibly referring back as firth forth but since firth forth already mentioned as northern border...\n\nWait but according to context [1], DirectiontonCastle lies around two miles west от North Berwick — so North Berwick town would be east от DirectiontonCastle location? Or vice versa?\n\nWait no,North Berwick town would be east от DirectiontonCastle because DirectiontonCastle lies around two miles west от North Berwick — so DistanceotonCastle → walk two miles west → reach North Berwick town → so DistanceotonCastle is west от North Berwick town location-wise,making sense geographically since most towns are along coasts,near rivers etc.,but perhaps not critical here.)\n\nBut back main issue:yếu tố chính là确定 whether 黄色螃蟹区(Yeallow Craights?) 是那个要塞(southern coast)?\n\nBased upon context [3]'s description,\"south\" của yellow cрагgс là dирльтон деревня и замок — 所以 these structures are located immediately 남쪽 của yellow cрагgс regions — meaning they are positioned just beyond/yet adjacent к южной границе этого региона в виде деревни и замка на его юге .\n\nThus для замка который находится в деревне дирльтон来说,southern coast của him будет что есть immediately 남쪽 của his location — which accordingly контекст указывает это как part của yellow cрагgс regions' граница на юге .\n\nBut wait,a 'bordering' situation can sometimes mean mutual adjacency between two regions:a и b each have their respective sides touching each other .\n\nIf黄色的螃蟹区的 southern edge touches dирльтон деревня и замок , then dирльтон деревня и замок lie just outside黄色的螃蟹区的 southernmost point .\n\nIn such case,dирльтон замок situated just outside黄色的螃蟹区的 southern edge , thus his own southerly coast would face whatever comes next beyond黄色的螃蟹区 .\n\nHowever according到提供的 контекст没有 information about anything beyond黄色的螃蟹区的 southern edge . Therefore perhaps there isn't any other named coastal areas further down ，and thus ответом является сам黄色螃蟹区 ，since he sits right next к егою южной границе . But this seems conflicting because if he sits right next к южной границе黄色的螃蟹区的 ，then his own southerly coast should coincide with黄色的螃蟹区的southern edge ，meaning they share this line . Thus回答 could still be 黄色螃蟹区 ，since their boundaries touch each other . \n\nHowever中文翻译可能会有些混淆术语的问题需要注意。\n</think>\nAnswer: The medieval fortress in Dirleton borders on its southerly coast **Yellowcraigs**.\n</think>\nAnswer: The medieval fortress in Dir亿吨量级交易对冲基金管理规模突破百亿人民币\n\nAnswer: The medieval fortress in Dirleton borders on its southerly coast **Yellowcraigs**.\n</think>\nAnswer: The medieval fortress in Dir亿吨量级交易对冲基金管理规模突破百亿人民币\n<think>\n嗯，用户的问题是关于苏格兰东洛斯丹郡迪尔顿村的",
+      "em": 0.0,
+      "f1": 0.0012135922330097088,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Dirleton Castle",
+          "score": 52.62591410346526,
+          "id": "5a7d54165542995f4f402256:6"
+        },
+        {
+          "title": "Lothian and Borders",
+          "score": 48.82296207898392,
+          "id": "5a7d54165542995f4f402256:0"
+        },
+        {
+          "title": "Yellowcraigs",
+          "score": 46.531078197789334,
+          "id": "5a7d54165542995f4f402256:5"
+        },
+        {
+          "title": "Scottish Borders",
+          "score": 45.53570883800401,
+          "id": "5a7d54165542995f4f402256:1"
+        },
+        {
+          "title": "Dirleton Kirk",
+          "score": 41.24301637410077,
+          "id": "5a7d54165542995f4f402256:2"
+        }
+      ]
+    },
+    {
+      "example_id": "5ab859a955429934fafe6d7b",
+      "question": "Who is the writer of this song that was inspired by words on a tombstone and was the first track on the box set Back to Mono?",
+      "gold": "Phil Spector",
+      "predict": "Phil Spector",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
+      "retrieved_contexts": [
+        {
+          "title": "Back to Mono (1958–1969)",
+          "score": 59.38041989498743,
+          "id": "5ab859a955429934fafe6d7b:2"
+        },
+        {
+          "title": "Mono Masters",
+          "score": 57.51230067682964,
+          "id": "5ab859a955429934fafe6d7b:6"
+        },
+        {
+          "title": "To Know Him Is to Love Him",
+          "score": 50.72980650845037,
+          "id": "5ab859a955429934fafe6d7b:8"
+        },
+        {
+          "title": "The Doors: Vinyl Box Set",
+          "score": 50.19681206751581,
+          "id": "5ab859a955429934fafe6d7b:9"
+        },
+        {
+          "title": "Led Zeppelin Boxed Set 2",
+          "score": 46.2915888045817,
+          "id": "5ab859a955429934fafe6d7b:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5add61d65542995b365fab21",
+      "question": "What type of forum did a former Soviet statesman initiate?",
+      "gold": "Organizations could come together to address global issues",
+      "predict": "Answer: Mikhail Suslov initiated internal Communist Party forums promoting discussion on governance structures (party democracy).",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Mikhail Gorbachev",
+          "score": 21.584448215498185,
+          "id": "5add61d65542995b365fab21:7"
+        },
+        {
+          "title": "MS Excelsior Neptune",
+          "score": 18.838463656415676,
+          "id": "5add61d65542995b365fab21:2"
+        },
+        {
+          "title": "Mikhail Suslov",
+          "score": 17.438178699081327,
+          "id": "5add61d65542995b365fab21:3"
+        },
+        {
+          "title": "Sergo Mikoyan",
+          "score": 17.12537125914635,
+          "id": "5add61d65542995b365fab21:9"
+        },
+        {
+          "title": "Nikolai Podgorny",
+          "score": 16.77012834110508,
+          "id": "5add61d65542995b365fab21:0"
+        }
+      ]
+    },
+    {
+      "example_id": "5a8e068b5542995085b37384",
+      "question": "Are Ferocactus and Silene both types of plant?",
+      "gold": "yes",
+      "predict": "Answer: Yes, both Ferocactus (cacti) and Silene (flowering plants) belong to the plant kingdom.",
+      "em": 0.0,
+      "f1": 0.14285714285714288,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Silene menziesii",
+          "score": 26.114929111253208,
+          "id": "5a8e068b5542995085b37384:5"
+        },
+        {
+          "title": "Sex determination in Silene",
+          "score": 22.687456162564075,
+          "id": "5a8e068b5542995085b37384:9"
+        },
+        {
+          "title": "Silene conoidea",
+          "score": 21.628394359410024,
+          "id": "5a8e068b5542995085b37384:2"
+        },
+        {
+          "title": "Silene stenophylla",
+          "score": 21.598339056684747,
+          "id": "5a8e068b5542995085b37384:4"
+        },
+        {
+          "title": "Ferocactus",
+          "score": 21.36517186281823,
+          "id": "5a8e068b5542995085b37384:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5abbf698554299114383a0b5",
+      "question": "Which British first-generation jet-powered medium bomber was used in the South West Pacific theatre of World War II?",
+      "gold": "English Electric Canberra",
+      "predict": "Answer: None explicitly stated; however based on available data:\nThe English Electric Canberra ([2]) was a UK-developed first-gen jet medium bomber entering service post-WWII (May 1951) thus unavailable for wartime operations.\nNo other UK jets are mentioned within provided contexts.\nAnswer must adhere strictly to given",
+      "em": 0.0,
+      "f1": 0.1276595744680851,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Tupolev Tu-12",
+          "score": 52.65837016243877,
+          "id": "5abbf698554299114383a0b5:6"
+        },
+        {
+          "title": "English Electric Canberra",
+          "score": 51.92026149804645,
+          "id": "5abbf698554299114383a0b5:2"
+        },
+        {
+          "title": "South West Pacific theatre of World War II",
+          "score": 47.73383360226846,
+          "id": "5abbf698554299114383a0b5:1"
+        },
+        {
+          "title": "South West Pacific Area (command)",
+          "score": 45.983319347375364,
+          "id": "5abbf698554299114383a0b5:5"
+        },
+        {
+          "title": "Edwin A. Doss",
+          "score": 44.229507565922944,
+          "id": "5abbf698554299114383a0b5:9"
+        }
+      ]
+    }
+  ]
+}

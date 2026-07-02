@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Project artifacts
+artifacts/*.pkl
+artifacts/*.jsonl
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
