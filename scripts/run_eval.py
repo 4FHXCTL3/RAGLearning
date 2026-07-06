@@ -7,6 +7,15 @@ import sys
 
 from tqdm import tqdm
 
+# On Windows the default console codec (gbk) crashes when printing non-latin
+# characters that appear in Wikipedia titles. Force UTF-8 so evaluation never
+# dies on a print statement.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
@@ -55,19 +64,21 @@ def main() -> None:
         question = example["question"]
         gold_answer = example["answer"]
         result = pipeline.answer(question, top_k=args.top_k)
-        em = exact_match_score(result.answer, gold_answer)
-        f1 = f1_score(result.answer, gold_answer)
+        answer = result.answer
+
+        em = exact_match_score(answer, gold_answer)
+        f1 = f1_score(answer, gold_answer)
         em_scores.append(em)
         f1_scores.append(f1)
 
         category = "correct" if em > 0 else (
-            "rejected_unknown" if result.answer.lower() == "unknown" else "incorrect_answer"
+            "rejected_unknown" if answer.lower() == "unknown" else "incorrect_answer"
         )
         records.append({
             "example_id": example.get("id", f"{offset - 1}"),
             "question": question,
             "gold": gold_answer,
-            "predict": result.answer,
+            "predict": answer,
             "em": em,
             "f1": f1,
             "category": category,
@@ -81,7 +92,7 @@ def main() -> None:
         print(f"Example {offset}")
         print(f"Question: {question}")
         print(f"Gold:     {gold_answer}")
-        print(f"Predict:  {result.answer}")
+        print(f"Predict:  {answer}")
         print(f"EM/F1:    {em:.3f}/{f1:.3f}")
         print("Retrieved:")
         for ctx_index, ctx in enumerate(result.contexts, start=1):

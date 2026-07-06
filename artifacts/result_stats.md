@@ -9,13 +9,13 @@
 
 | Metric | Value |
 |--------|-------|
-| Average EM | **0.020** (2.0%) |
-| Average F1 | **0.289** (28.9%) |
+| Average EM | **0.340** (34.0%) |
+| Average F1 | **0.409** (40.9%) |
 
 ## Result Category
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| Correct (EM > 0) | 1 | 2.0% |
+| Correct (EM > 0) | 17 | 34.0% |
 | Rejected (unknown) | 0 | 0.0% |
-| Incorrect answer | 49 | 98.0% |
+| Incorrect answer | 33 | 66.0% |

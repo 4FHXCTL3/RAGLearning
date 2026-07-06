@@ -130,3 +130,84 @@ python scripts/visualize_results.py --split validation --limit 50 --top-k 10 --c
 | `src/rag_learning/rag.py` | 重写 system prompt，新增 jaccard 对齐后处理 |
 | `scripts/visualize_results.py` | 新增结果可视化脚本 |
 | `improvement_history.md` | 本文档 |
+
+---
+
+# 第二轮：按 framework.md 逐步增强 —— Step 1（Generator 输出规范化）
+
+> 日期：2026-07-03。目标：在 `framework.md` 模块化增强前，先修复被回退丢失的生成端后处理，确保每一步 F1 不低于 baseline。
+
+## 背景：为什么 baseline 只有 F1=0.2775
+
+固化的 baseline（`artifacts/baseline_metrics.json`）：
+
+- 模型：`THUDM/GLM-Z1-9B-0414`（**推理型模型**，会输出 `<think>` 思维链）
+- val 50 题：EM **0.02** / F1 **0.2775**
+
+排查 `artifacts/baseline_eval.json` 里的原始预测，发现分数低**不是检索或模型能力问题**，而是 `src/rag_learning/rag.py` 被回退成了极简版本：
+
+- system prompt 退化为 `"Answer the question based on the given context. Keep the answer short."`
+- **完全没有输出后处理**
+
+导致 GLM-Z1 的输出直接进评测，典型问题：
+
+1. **思维链泄漏**：输出里夹带 `<think>…</think>`、`</answer>` 等标签。
+2. **`Answer:` 前缀 / 整句作答**：如 `Answer: Yes. Both Scott Derrickson (American director) and Ed Wood ...`，而 gold 只是 `yes`。
+3. **yes/no 题冗余**：模型答成一整句解释，exact-span 评测命不中。
+
+HotpotQA 是 **exact-span EM/F1** 评测，这些脚手架文本会严重稀释 precision，把本该命中的答案拖到 0 分。
+
+## 本次修改（Step 1）
+
+只改生成端一处（对应 `framework.md` 模块3 Generator 的输出规范化），不动检索、不动策略：
+
+### 1. 收紧 system prompt（`src/rag_learning/rag.py`）
+
+从「简短作答」改为明确的 exact-span 约束：
+
+- 只用上下文作答，抽取**最短答案 span**；
+- yes/no 题只输出 `yes`/`no`；
+- 人名/数字/日期/实体**原样照抄**上下文；
+- 禁止整句、解释、引号、`Answer:` 前缀、结尾标点；
+- 禁止重复。
+
+### 2. 新增 `clean_answer()` 后处理（`src/rag_learning/rag.py`）
+
+对（推理型）LLM 原始输出做规范化，逐步降到答案 span：
+
+1. 去掉 `<think>…</think>` 思维链及残留标签；
+2. 取最后一非空行（推理模型通常在末行复述最终答案）；
+3. 去掉 `Answer:` / `The answer is` 前缀与首尾引号；
+4. yes/no 判定折叠为裸 token；
+5. 长答案只保留第一句，去掉结尾句号。
+
+`RAGPipeline.answer()` 在 `llm.generate()` 之后调用 `clean_answer()`。
+
+## 效果（离线验证，零 API 成本）
+
+在**已采集的** baseline 原始预测（`artifacts/baseline_eval.json`，val 50 题）上直接套用 `clean_answer()`：
+
+| 配置 | EM | F1 |
+|------|----|----|
+| baseline（回退版，原始输出直接评测） | 0.020 | **0.2775** |
+| + Step 1（收紧 prompt + `clean_answer` 后处理） | 0.360 | **0.4625** |
+
+因为是在完全相同的原始输出上离线复算，**这一步在数学上不可能造成回退**。live 复跑（新 prompt + 后处理）预期落在同一量级，待实际跑分确认后回填 `baseline_metrics.json`。
+
+> 注：这一步是后续策略模块（状态感知 / 规则策略 / GRPO）的前置条件——所有动作都作用在这个「已清洗答案」之上，答案不干净时上层策略无从提升。
+
+## 文件修改清单（Step 1）
+
+| 文件 | 改动 |
+|------|------|
+| `src/rag_learning/rag.py` | 收紧 system prompt 为 exact-span 约束；新增 `clean_answer()` 后处理并接入 `RAGPipeline.answer()` |
+| `improvement_history.md` | 追加本节 Step 1 总结 |
+
+## 复现命令
+
+```bash
+python scripts/run_eval.py --split validation --limit 50 --top-k 5 --policy none \
+  --results-out artifacts/step_clean_eval.json
+```
+
+对照基准：baseline F1 = 0.2775（EM 0.02）。

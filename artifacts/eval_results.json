@@ -7,18 +7,18 @@
   },
   "summary": {
     "num_examples": 50,
-    "avg_em": 0.02,
-    "avg_f1": 0.2890462318350704
+    "avg_em": 0.38,
+    "avg_f1": 0.46902857142857146
   },
   "results": [
     {
       "example_id": "5a8b57f25542995d1e6f1371",
       "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
       "gold": "yes",
-      "predict": "Answer: Yes. Both are American; Scott Derrickson is an American director living in Los Angeles ([3]), while Ed Wood (the filmmaker) was active in U.S. cinema ([2]).",
-      "em": 0.0,
-      "f1": 0.07692307692307693,
-      "category": "incorrect_answer",
+      "predict": "yes",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Woodson, Arkansas",
@@ -51,7 +51,7 @@
       "example_id": "5a8c7595554299585d9e36b6",
       "question": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
       "gold": "Chief of Protocol",
-      "predict": "Answer: None specified; based on provided context alone.\n</think>\nAnswer: None specified; based on provided context alone.\n</answer>",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -87,9 +87,9 @@
       "example_id": "5a85ea095542994775f606a8",
       "question": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
       "gold": "Animorphs",
-      "predict": "Answer: Animorphs",
+      "predict": "",
       "em": 0.0,
-      "f1": 0.6666666666666666,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -123,10 +123,10 @@
       "example_id": "5adbf0a255429947ff17385a",
       "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
       "gold": "no",
-      "predict": "Answer: No.",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
-      "category": "incorrect_answer",
+      "predict": "no",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Esma Sultan Mansion",
@@ -159,9 +159,9 @@
       "example_id": "5a8e3ea95542995a26add48d",
       "question": "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
       "gold": "Greenwich Village, New York City",
-      "predict": "Answer: There is no information provided regarding where Director Adriana Trigiani is based or associated with any New York city specifically within these contexts.\n</think>\nAnswer: No specific New York city is indicated for Director Adriana Trigiani within these contexts.\n</answer>",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.13043478260869565,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -195,10 +195,10 @@
       "example_id": "5abd94525542992ac4f382d2",
       "question": "2014 S/S is the debut album of a South Korean boy group that was formed by who?",
       "gold": "YG Entertainment",
-      "predict": "Answer: YG Entertainment.",
-      "em": 0.0,
-      "f1": 0.8,
-      "category": "incorrect_answer",
+      "predict": "YG Entertainment",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "SF9 (band)",
@@ -231,9 +231,9 @@
       "example_id": "5a85b2d95542997b5ce40028",
       "question": "Who was known by his stage name Aladin and helped organizations improve their performance as a consultant?",
       "gold": "Eenasul Fateh",
-      "predict": "Answer: Eenasul Fateh (Aladin).",
+      "predict": "Aladin Eenasul Fateh",
       "em": 0.0,
-      "f1": 0.6666666666666666,
+      "f1": 0.8,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -267,7 +267,7 @@
       "example_id": "5a87ab905542996e4f3088c1",
       "question": "The arena where the Lewiston Maineiacs played their home games can seat how many people?",
       "gold": "3,677 seated",
-      "predict": "Answer: The information provided does not specify seating capacity for Androscoggin Bank Col尼斯é where Lewiston Maineiacs played home games.",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -303,9 +303,9 @@
       "example_id": "5a7bbb64554299042af8f7cc",
       "question": "Who is older, Annie Morton or Terry Richardson?",
       "gold": "Terry Richardson",
-      "predict": "Answer: Terry Richardson (born August 14, 1965) is older than Annie Morton (born October 8, 1970).",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.2222222222222222,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -339,10 +339,10 @@
       "example_id": "5a8db19d5542994ba4e3dd00",
       "question": "Are Local H and For Against both from the United States?",
       "gold": "yes",
-      "predict": "Answer: Only Local H (context [3]) is confirmed to be from the U.S., as \"For Against\" isn't mentioned in any provided context entries.",
-      "em": 0.0,
-      "f1": 0.0,
-      "category": "incorrect_answer",
+      "predict": "yes",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Amherst, Massachusetts",
@@ -375,7 +375,7 @@
       "example_id": "5a7166395542994082a3e814",
       "question": "What is the name of the fight song of the university whose main campus is in Lawrence, Kansas and whose branch campuses are in the Kansas City metropolitan area?",
       "gold": "Kansas Song",
-      "predict": "Answer: Rock Chalk Jayhawk",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -411,10 +411,10 @@
       "example_id": "5a877e5d5542993e715abf7d",
       "question": "What screenwriter with credits for \"Evolution\" co-wrote a film starring Nicolas Cage and Téa Leoni?",
       "gold": "David Weissman",
-      "predict": "Answer: David Weissman",
-      "em": 0.0,
-      "f1": 0.8,
-      "category": "incorrect_answer",
+      "predict": "David Weissman",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "The Family Man",
@@ -447,10 +447,10 @@
       "example_id": "5ab3b0bf5542992ade7c6e39",
       "question": "What year did Guns N Roses perform a promo for a movie starring Arnold Schwarzenegger as a former New York Police detective?",
       "gold": "1999",
-      "predict": "Answer: 1999",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
-      "category": "incorrect_answer",
+      "predict": "1999",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "End of Days (film)",
@@ -483,7 +483,7 @@
       "example_id": "5ab56e32554299637185c594",
       "question": "Are Random House Tower and 888 7th Avenue both used for real estate?",
       "gold": "no",
-      "predict": "Answer: Yes; Random House Tower includes luxury apartments while hosting Real Estate-related entities like Pershing Square Capital Management nearby at similar addresses linked via shared infrastructure goals tied towards optimizing asset portfolios across diverse sectors including industrial/residential/commercial per benchmarking standards outlined in RE Tech definitions provided contextual framework linking these structures' roles",
+      "predict": "yes",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -519,9 +519,9 @@
       "example_id": "5ab6d09255429954757d337d",
       "question": "The football manager who recruited David Beckham managed Manchester United during what timeframe?",
       "gold": "from 1986 to 2013",
-      "predict": "Alex Ferguson (1986–2013).",
+      "predict": "1986 to 2013",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.8571428571428571,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -555,7 +555,7 @@
       "example_id": "5a75e05c55429976ec32bc5f",
       "question": "Brown State Fishing Lake is in a country that has a population of how many inhabitants ?",
       "gold": "9,984",
-      "predict": "Answer: United States has approximately 332 million inhabitants as of recent estimates (not explicitly stated in context).",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -591,7 +591,7 @@
       "example_id": "5ab3e45655429976abd1bcd4",
       "question": "The Vermont Catamounts men's soccer team currently competes in a conference that was formerly known as what from 1988 to 1996?",
       "gold": "the North Atlantic Conference",
-      "predict": "Answer: None specified",
+      "predict": "",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -627,10 +627,10 @@
       "example_id": "5ab29c24554299449642c932",
       "question": "Are Giuseppe Verdi and Ambroise Thomas both Opera composers ?",
       "gold": "yes",
-      "predict": "Answer: Yes",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
-      "category": "incorrect_answer",
+      "predict": "yes",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Teatro Giuseppe Verdi",
@@ -663,7 +663,7 @@
       "example_id": "5ae0d4c9554299603e418468",
       "question": "Roger O. Egeberg was Assistant Secretary for Health and Scientific Affairs during the administration of a president that served during what years?",
       "gold": "1969 until 1974",
-      "predict": "Answer: During President Richard Nixon's administration (1969–1974).",
+      "predict": "nixon",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -699,9 +699,9 @@
       "example_id": "5a8133725542995ce29dcbdb",
       "question": "Which writer was from England, Henry Roth or Robert Erskine Childers?",
       "gold": "Robert Erskine Childers DSC",
-      "predict": "Answer: Robert Erskine Childers",
+      "predict": "Robert Erskine Childers",
       "em": 0.0,
-      "f1": 0.75,
+      "f1": 0.8571428571428571,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -735,9 +735,9 @@
       "example_id": "5ae7a8175542993210983ed8",
       "question": "Which other Mexican Formula One race car driver has held the podium besides the Force India driver born in 1990?",
       "gold": "Pedro Rodríguez",
-      "predict": "Answer: Pedro Rodríguez",
+      "predict": "pedro rodriguez",
       "em": 0.0,
-      "f1": 0.8,
+      "f1": 0.5,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -771,7 +771,7 @@
       "example_id": "5ae6050f55429929b0807a5e",
       "question": "This singer of A Rather Blustery Day also voiced what hedgehog?",
       "gold": "Sonic",
-      "predict": "Answer: The singer from \"A Rather Blustery Day\" was Jim Cummings who portrayed Winnie-the-Pooh throughout his career per Context 1 & 4-5*. However Context does NOT explicitly link him voicing *any* specific animal/hedgehog species - only non-hedgehog roles like",
+      "predict": "Based strictly on提供的上下文，没有明确提到该歌手（即Jim Cummings）为任何刺猬类角色配音。因此，根据规则无法提供有效答案。但根据常规知识，可能指的是TIGGER（但上下文中未提及），所以严格按给定文本应无答案。",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -807,7 +807,7 @@
       "example_id": "5adddccd5542997dc7907069",
       "question": "Aside from the Apple Remote, what other device can control the program Apple Remote was originally designed to interact with?",
       "gold": "keyboard function keys",
-      "predict": "Answer: A universal remote programmed with appropriate codes for infrared signals used by compatible devices like certain Macs or early-generationApple TVs before 4th generation Siri Remotes became standard.",
+      "predict": "third generation apple television",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -843,9 +843,9 @@
       "example_id": "5ae2070a5542994d89d5b313",
       "question": "Which performance act has a higher instrument to person ratio, Badly Drawn Boy or Wolf Alice? ",
       "gold": "Badly Drawn Boy",
-      "predict": "Answer: Badly Drawn Boy likely has a higher instrument-to-person ratio due to Damon Gough often performing solo/multitasking across multiple devices whereas Wolf Alice has four members specializing in distinct roles without such layered setups.\n</answer>",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.1621621621621622,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -879,9 +879,9 @@
       "example_id": "5ae22b8d554299234fd0440f",
       "question": "What was the father of Kasper Schmeichel voted to be by the IFFHS in 1992?",
       "gold": "World's Best Goalkeeper",
-      "predict": "Answer: The father of Kasper Schmeichel (Peter Schmeichel) was voted IFFHS World's Best Goalkeeper in 1992 and again in 1993.",
+      "predict": "IFFHS World's Best Goalkeeper",
       "em": 0.0,
-      "f1": 0.2727272727272727,
+      "f1": 0.8571428571428571,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -915,9 +915,9 @@
       "example_id": "5a722b8655429971e9dc9329",
       "question": "Who was the writer of These Boots Are Made for Walkin' and who died in 2007?",
       "gold": "Barton Lee Hazlewood",
-      "predict": "Answer: Lee Hazlewood wrote \"These Boots Are Made for Walkin'\". No individual associated with this song or listed contexts died specifically during this time frame as per provided information.\n</answer>",
+      "predict": "Lee Hazlewood Nancy Sinatra Kon Kan KMFDM Boots EP album Kon Kan Canadian synthpop project Barry Harris Toronto Ontario Juno Award song I Beg Your Pardon Puss N' Boots These Boots Are Made for Walkin' Billboard Hot 100 UK Singles Chart October 1989 #11 New Zealand #61",
       "em": 0.0,
-      "f1": 0.1212121212121212,
+      "f1": 0.08,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -951,7 +951,7 @@
       "example_id": "5adf37a95542995ec70e8f97",
       "question": "The 2011–12 VCU Rams men's basketball team, led by third year head coach Shaka Smart, represented Virginia Commonwealth University which was founded in what year?",
       "gold": "1838",
-      "predict": "Answer cannot be determined from provided context; university founding date not mentioned in any text entries for VCU Rams' teams between these years.",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -987,10 +987,10 @@
       "example_id": "5abd259d55429924427fcf1a",
       "question": "Are both Dictyosperma, and Huernia described as a genus?",
       "gold": "yes",
-      "predict": "Yes. Both genera are described: Huernia [1] and Dictyosperma [2].",
-      "em": 0.0,
-      "f1": 0.18181818181818182,
-      "category": "incorrect_answer",
+      "predict": "yes",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Huernia",
@@ -1023,9 +1023,9 @@
       "example_id": "5a828c8355429966c78a6a50",
       "question": "Kaiser Ventures corporation was founded by an American industrialist who became known as the father of modern American shipbuilding?",
       "gold": "Henry J. Kaiser",
-      "predict": "Answer: Yes, Henry J. Kaiser founded Kaiser Ventures (formerly Kaiser Steel), and he is known as the father of modern American shipbuilding for establishing the Kaiser Shipyards during WWII.",
+      "predict": "yes",
       "em": 0.0,
-      "f1": 0.19999999999999998,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1059,7 +1059,7 @@
       "example_id": "5a8a3e745542996c9b8d5e70",
       "question": "What is the name for the adventure in \"Tunnels and Trolls\", a game designed by Ken St. Andre?",
       "gold": "Arena of Khazan",
-      "predict": "Answer: There is no specific adventure name mentioned in the provided context for \"Tunnels & Trolls.\"",
+      "predict": "",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1095,9 +1095,9 @@
       "example_id": "5ac23ff0554299636651994d",
       "question": "When was Poison's album \"Shut Up, Make Love\" released?",
       "gold": "2000",
-      "predict": "Answer: March 14, 2000 (from *Crack a Smile...and More!*)",
+      "predict": "March 14",
       "em": 0.0,
-      "f1": 0.2222222222222222,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1131,7 +1131,7 @@
       "example_id": "5ae4a3265542995ad6573de5",
       "question": "Hayden is a singer-songwriter from Canada, but where does Buck-Tick hail from?",
       "gold": "Fujioka, Gunma",
-      "predict": "Answer: Japan",
+      "predict": "Japan",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1167,9 +1167,9 @@
       "example_id": "5ae0361155429925eb1afc2c",
       "question": "Which  French ace pilot and adventurer fly L'Oiseau Blanc",
       "gold": "Charles Eugène",
-      "predict": "Answer: Charles Nungesser",
+      "predict": "Charles Nungesser",
       "em": 0.0,
-      "f1": 0.4,
+      "f1": 0.5,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1203,10 +1203,10 @@
       "example_id": "5abc0a5d5542993f40c73c64",
       "question": "Are Freakonomics and In the Realm of the Hackers both American documentaries?",
       "gold": "no",
-      "predict": "Answer: No. \"In the Realm of the Hackers\" (Australian) and \"Freakonomics: The Movie\" (American) are different; only Freakonomics is an American documentary.",
-      "em": 0.0,
-      "f1": 0.10526315789473684,
-      "category": "incorrect_answer",
+      "predict": "no",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "In the Realm of the Hackers",
@@ -1239,10 +1239,10 @@
       "example_id": "5a7cc50e554299452d57ba3e",
       "question": "Which band, Letters to Cleo or Screaming Trees, had more members?",
       "gold": "Letters to Cleo",
-      "predict": "Answer: Letters to Cleo had more members with 7 compared to Screaming Trees' core group of 4-5 throughout their careers based on provided contexts.\n</think>\nAnswer: Letters to Cleo had more members with 7 compared to Screaming Trees' core group of 4-5 throughout their",
-      "em": 0.0,
-      "f1": 0.1276595744680851,
-      "category": "incorrect_answer",
+      "predict": "letters to cleo",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Letters to Cleo",
@@ -1275,10 +1275,10 @@
       "example_id": "5abf63f15542997ec76fd3ea",
       "question": "Alexander Kerensky was defeated and destroyed by the Bolsheviks in the course of a civil war that ended when ?",
       "gold": "October 1922",
-      "predict": "Answer: October 1922",
-      "em": 0.0,
-      "f1": 0.8,
-      "category": "incorrect_answer",
+      "predict": "October 1922",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Socialist Revolutionary Party",
@@ -1311,10 +1311,10 @@
       "example_id": "5a8ef2a75542995a26add583",
       "question": "Seven Brief Lessons on Physics was written by an Italian physicist that has worked in France since what year?",
       "gold": "2000",
-      "predict": "Answer: 2000",
-      "em": 0.0,
-      "f1": 0.6666666666666666,
-      "category": "incorrect_answer",
+      "predict": "2000",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Seven Brief Lessons on Physics",
@@ -1347,10 +1347,10 @@
       "example_id": "5a80721b554299485f5985ef",
       "question": "The Livesey Hal War Memorial commemorates the fallen of which war, that had over 60 million casualties?",
       "gold": "World War II",
-      "predict": "Answer: World War II",
-      "em": 0.0,
-      "f1": 0.8571428571428571,
-      "category": "incorrect_answer",
+      "predict": "World War II",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Livesey Hall War Memorial",
@@ -1383,10 +1383,10 @@
       "example_id": "5ab51dae5542991779162d82",
       "question": "Are both Elko Regional Airport and Gerald R. Ford International Airport located in Michigan?",
       "gold": "no",
-      "predict": "No, only Gerald R. Ford International Airport (Michigan) is located there; Elko Regional Airport is in Nevada (Elko County).",
-      "em": 0.0,
-      "f1": 0.1,
-      "category": "incorrect_answer",
+      "predict": "no",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Gerald R. Ford International Airport",
@@ -1419,9 +1419,9 @@
       "example_id": "5a7571135542992d0ec05f98",
       "question": "Ralph Hefferline was a psychology professor at a university that is located in what city?",
       "gold": "New York City",
-      "predict": "Answer: New York City",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.8571428571428571,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1455,10 +1455,10 @@
       "example_id": "5a7a0e1e5542990783324e1a",
       "question": "Which dog's ancestors include Gordon and Irish Setters: the Manchester Terrier or the Scotch Collie?",
       "gold": "Scotch Collie",
-      "predict": "Answer: Scotch Collie",
-      "em": 0.0,
-      "f1": 0.8,
-      "category": "incorrect_answer",
+      "predict": "Scotch Collie",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Scotch Collie",
@@ -1491,9 +1491,9 @@
       "example_id": "5a74106b55429979e288289e",
       "question": "Where is the company that Sachin Warrier worked for as a software engineer headquartered? ",
       "gold": "Mumbai",
-      "predict": "Answer: Tata Consultancy Services (TCS), headquartered in Mumbai.",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.2222222222222222,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1527,7 +1527,7 @@
       "example_id": "5a79311755429970f5fffe67",
       "question": "A Japanese manga series based on a 16 year old high school student Ichitaka Seto, is written and illustrated by someone born in what year?",
       "gold": "1962",
-      "predict": "Answer cannot be determined from provided context; no author/birth year data is given for \"I\"s (Masakazu Katsura).",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1563,10 +1563,10 @@
       "example_id": "5ab2d3df554299194fa9352c",
       "question": "The battle in which Giuseppe Arimondi lost his life secured what for Ethiopia?",
       "gold": "sovereignty",
-      "predict": "The Battle of Adwa secured Ethiopian sovereignty against Italian invasion during the First Italo-Ethiopian War. Giuseppe Arimondi, an Italian general who fought there, died in combat on March 1, 1896.",
-      "em": 0.0,
-      "f1": 0.07142857142857142,
-      "category": "incorrect_answer",
+      "predict": "sovereignty",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Battle of Adwa",
@@ -1599,9 +1599,9 @@
       "example_id": "5a760ab65542994ccc918697",
       "question": "Alfred Balk served as the secretary of the Committee on the Employment of Minority Groups in the News Media under which United States Vice President?",
       "gold": "Nelson Rockefeller",
-      "predict": "Answer: None; Alfred Balk served under New York Governor Nelson Rockefeller during his tenure with that specific committee.\n</think>\nAnswer: None; Alfred Balk served under New York Governor Nelson Rockefeller during his tenure with that specific committee.\n</answer>",
+      "predict": "no",
       "em": 0.0,
-      "f1": 0.1,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1635,9 +1635,9 @@
       "example_id": "5a7d54165542995f4f402256",
       "question": "A medieval fortress in Dirleton, East Lothian, Scotland borders on the south side of what coastal area?",
       "gold": "Yellowcraig",
-      "predict": "Okay, let's tackle this question. The user is asking about a medieval fortress in Dirleton, East Lothian, Scotland, and specifically wants to know which coastal area it borders on the south side.\n\nFirst, I need to identify the medieval fortress mentioned. Looking at the context provided, [1] talks about Dirleton Castle. That's the fortress in question. Now, the question is about the coastal area to the south of this castle.\n\nNext, check the context for any mention of coastal areas near Dirleton. The relevant sections would be [3] and maybe [2]. Let's look at [3]: Yellowcraig is described as a coastal area in East Lothian. It mentions that Yellowcraig is bordered to the south by Dirleton and Dirleton Castle. Wait, that seems contradictory because if Yellowcraig is bordered to the south by Dirleton Castle, then the castle would be north of Yellowcraig. But the question states that the castle borders on the south side of a coastal area.\n\nHmm, maybe I need to parse that again. The content says: \"Yellowcraig... is bordered to the north by the Firth of Forth... to the south by the village of Dirleton and Dirleton Castle.\" So Yellowcraig is south of Dirleton Castle? Wait, no—if something is bordered to the south by another place or structure, that means those are on its southern side. So if Yellowcraig is bordered to the south by Dirleton and its castle, then Yellowcraig would be north of those? That doesn't make sense geographically because typically a border to the south would mean that thing is north of it.\n\nWait, maybe I'm getting confused with directions here. Let me visualize this. If you have a coastal area (Yellowcraig) and it's bordered to the north by Firth of Forth (a sea), then moving south from there would be towards land. The content says Yellowcrag's southern border is Dirleton village and Dirleton Castle. So that means when you go from North Berwick towards East Lothian (since Dirleton is 2 miles west of North Berwick), you pass through areas leading up to Yellowcrag on one side and then down towards South? Wait, perhaps I should think in terms of map directions.\n\nAlternatively, maybe there's another way. The question states that a medieval fortress (Dirleton Castle) borders on its southern side a coastal area. So we need a coastal area that has its northern border at Dirleton Castle.\n\nLooking back at context [3], it says: \"Yellowcraigs...to the south by...Dir尔顿 Castle.\" Wait no—the exact wording: \"to the south by ...Dir尔顿 village and Dir尔顿 Castle.\" So if Yellowcraigs' southern boundary includes both village and castle, then those are located north of Yellowcraigs? Because if something is bordered on its southern side by another place/structure, those are located further north.\n\nSo for example: If Point A has a border on its east side with Point B, then Point B is eastward from Point A? No—actually, if Point A has an eastern border with Point B's western border. So direction depends on how they're adjacent.\n\nIn this case: \"borders to ...south\" means that when looking at Yellowcraigs from above (on a map), their southern edge touches where? If something borders南部 (south) of another place/area/structure，then it must be located north relative to them.\n\nWait no—if Area X has a border on its southern side with Area Y or Structure Z，then Area Y or Z must be located immediately northward from Area X's南部边界。So for example，if my house borders your house on my west side，your house is eastward from mine.\n\nSo applying this: If Yellowcraigs' southern boundary includes both Dir尔顿村和城堡，那么Dir尔顿城堡位于Yellowcraigs的北部。因此，问题中的城堡（Dir尔顿）位于该海岸地区的北部，而海岸地区是南边被城堡和村庄所界定的。\n\nBut wait，问题问的是“the medieval fortress in Dirleton... borders on its南部 what coastal area?”也就是城堡的南部边界的沿海地区是什么？\n\n根据上下文[3]，黄蟹角（Yellowcrag）的南部边界是Dir尔顿村和城堡。所以这意味着当站在黄蟹角的位置时，往南走会遇到Dir尔顿村和城堡。因此，黄蟹角位于北边，而Dir尔顿及其城堡位于其南边？这似乎矛盾。\n\n或者可能我理解反了方向。比如，“borders”到某个方向的描述可能需要更仔细的分析。\n\n再仔细看[3]的内容：\n\n\"Yellow craigs...is bordered...to the south by ...the village of Diroldemort and Diroldemort Castle.\"\n\n所以如果黄蟹角的南侧边界是Diroldemort村和城堡的话，那么这些村庄和城堡应该位于黄蟹角的北侧。也就是说，黄蟹角在它们的南方。因此问题中的情况是：用户问的是这个中世纪要塞（DiroldemortCastle）的南侧有什么沿海地区？\n\n根据这个信息，答案应该是：该要塞位于黄蟹角的北侧？但用户的问题是要塞南侧的海岸地区是什么？\n\n这时候可能需要重新审视上下文是否正确对应。\n\n或者可能我搞错了方向。例如，“bordered to 南部”意味着该区域在要塞的南方？比如：如果A被B的北部所界定，那么B在A的北方。\n\n所以如果Y（黄蟹角）被D（Diroldemort）及其村庄和城堡界定在南方的话，那么D是在Y的北方？即Y位于D的南方？\n\n但用户的问题是说这个中世纪要塞（D）南侧的海岸地区是什么？\n\n根据[3]，Y的黄蟹角被其南侧由D村和D堡界定。所以D的位置是在Y的北侧吗？或者说Y在D的南侧？\n\n这里可能存在地理上的混淆。例如：\n\n假设地图上从西向东为X轴正方向（东），北为+Y轴正方向。\n\n如果Y的黄蟹角的南侧边界是D村和堡的话，那么D的位置应该在Y的黄蟹角的正北方吗？或者相反？\n\n不，“bordered”到某个方向的描述通常是指该区域在该方向的边缘有另一个区域或结构存在。\n\n例如：“The park borders onto my house.” 这里的意思是公园与我的房子相邻。\n\n具体到“borders 南部”的情况：\n\n如果A地区的南部边界与B地区的北部边界相连的话，“A borders 南部 with B” 或者 “A’s 南部由B构成”。\n\n所以在这种情况下，“Yellow craigs...is bordered 南部by D village and D castle”，说明当站在Y的黄蟹角时往南走会遇到D村和堡。因此D的位置是在Y的黄蟹角的南方吗？这显然不对地理常识来说——因为通常村庄或建筑不会建在海边的沙滩上作为另一个区域的南部边界。\n\n或者更准确地说：当描述一个区域的某个方向被另一个地点或区域所界定时，“bordered 南部by”意味着该区域的最南端与那个地点相邻。例如：我的国家的南部边境与邻国接壤。\n\n因此在这种情况下，“Yellow craigs 的南部由 D 村庄和 D 堡垒构成”，意味着 D 村庄和堡位于 Y 黄蟹角的正南方吗？或者说 Y 的最南端与 D 相邻？\n\n如果是这样的话，那么问题中的中世纪堡垒（即 D 堡垒）位于 Y 黄蟹角的北侧吗？因为 Y 的最南端是 D 的位置？\n\n这时候用户的问题是说这个堡垒（D）向南边有什么海岸地区？\n\n根据上面的分析：如果 Y 黄蟹角的最南端是 D 村庄及堡所在的位置的话，那说明 Y 在 D 的北方。也就是说 D 位于 Y 的南方？这有点混乱。\n\n或许需要更仔细地分析地理位置：\n\n根据[1]，Dirleston Castle lies around 2 miles west of North Berwick (which is in East Lothian). Also mentioned in [1] that it was abandoned end 17th century.\n\nFrom [3], Yellowcraigs' boundaries:\n\n- 北部：Firth Of Forth\n\n- 南部：Dirleston Village 和 Castles\n\n- 东部：North Berwick West Links golf course\n\n- 西侧：Archerfield Estate 和 Links golf courses\n\n这说明整个Yellowcraigs区域位于北部的Firth Of Forth海、东部的北伯威克西林口高尔夫球场、西侧阿彻菲尔德庄园等之间。而它的最南端则与Dirleston村庄及城堡相邻。\n\n因此地图上大概是这样的布局：\n\nFirth Of Forth （北部）\n\n|\n\n|\n\n|\n\n然后到South的方向就是到达黄色螃蟹区(Yellowcraigs)的最南端点——那里有dirleston村庄和城堡。\n\n所以整个黄色螃蟹区(Yellowcraigs)应该是在北部的Forth海湾附近的一个沿海森林、沙滩等地形的地方。而它的最南端接壤dirleston村庄及城堡所在的位置。\n\n现在问题是问这个中世纪堡垒所在的dirleston村的南侧有什么海岸地区？\n\n根据上面的信息,Yellow CRAIGS 是一个沿海区域（因为它的北部被Forth海湾包围），并且它的最南端接壤dirleston villages以及castles所在的地点。也就是说 dirleston villages 和 castles 位于 yellow craigslist的最南方位置附近?\n\n如果是这样的话,yellow craigslist作为沿海区域,Y dirleston villages/castles在其最南端的内侧还是外侧呢?\n\n这里可能需要更仔细地理解地理关系：\n\n假设地图大致如下：\n\n从北向南排列：\n\nFirth Of Forth （北部）\n\n|\n\n|\n\n|\n\n然后是黄色螃蟹区(Yellow CRAIGS)，其北部被Forth海湾包围，\n\n向南延伸到某个点，\n\n而这个点的位置就是dirleston villages以及castles所在的地方，\n\n也就是 dirleston castle 位于 yellow craigslist的最南侧边界处，\n\n或者说 yellow craigslist 在 dirleston castle 的东侧或附近？\n\n但根据上下文中的描述：\"to the south by ...the village of diroldemort and diroldemort castle\"\n\n这说明当站在yellow craigslist的时候往南走会到达dirkowski村庄及堡的位置，\n\n即 yellow craigslist 在 dirkowski村的北方,\n\n而 dirkowski村及堡在其南方,\n\n同时整个yellow craigslist是一个沿海区域,\n\n因为它向北面有firth forth,\n\n向东面有north berwick west links golf course,\n\n向西面有archerfield estate等,\n\n向南面则延伸到dirkowski村庄及堡所在的位置,\n\n这可能意味着yellow craigslist是一个从北部的firth forth向东南延伸的区域,\n\n直到遇到dirkowski村庄及堡所在的地点,\n\n此时该堡所在的地理位置是在yellow craigslist的最南侧边缘处,\n\n因此问题中的中世纪堡垒(即dirkowski castle)向南面的coastal area是什么?\n\n根据上面的分析,yellow CRAIGS 是一个沿海区域(因为其北部被forth海湾包围),\n\n并且其最南站界就是dirkowski villages/castles所在的位置,\n\n所以可以推断出:\n\n这个中世纪堡垒(在yellow CRAIGS的最南站界处)向南并没有更多的coastal region了，\n\n因为yellow CRAIGS本身已经是一个靠近海岸的地区了，\n\n或者是否有可能存在其他coastal region?\n\n但根据提供的上下文信息中没有提到其他更大的coastal region靠近那里，\n\n只有提到的yellow CRAIGS作为coastal area存在，\n\n并且它被多个自然或人工结构所包围，\n\n其中南部边界是与dirkowski相关的地点相接,\n\n所以答案应该是yellow CRAIGS ?\n\n但是问题问的是“the medieval fortress in diroldemort,bordering on its own southerly coast what?”\n\n也就是要找出该堡垒自身向南边的coastal region名称是什么?\n\n根据上下文[3], 当提到yellowCraig的时候说它被四个方向的东西所包围:\n\n- 北部: Firth Of Forth\n\n- 南部: Village And Castle\n\n- 东部: Golf Course\n\n- 西侧: Another Golf Course\n\n这里的“south”指的是yellow Craig’s 最南站界处连接着village 和castle所在的位置,\n\n也就是说,yellow Craig’s 是一个沿海区域(因为它向北面对着firth forth),\n\n而在这个区域的正南方则是village 和castle所在的地方,\n\n但此时village 和castle是否属于另一个coastal region呢?\n\n或者是否village itself处于coastal region之外的内陆位置?\n\n可能需要进一步确认地理关系:\n\n假设整个情况是这样的:\n\n从北到南:\n\n1st layer: Firth Of Forth (sea)\n\n2nd layer: yellow Craig’s (beach forest etc.)\n\n3rd layer: Southwards here comes land with villages like diroldemort where there's also castles built inland away from coast?\n\n如果是这样,yellow Craig’s 是一个临海的内陆部分还是外海部分呢?\n\n或者可能反过来,yellow Craig’s 是临海的沙滩地带,yourtherwards内陆有village等地方.\n\n在这种情况下,village 和castle位于yelllowCraig’s的正南方(即yelllowCraig’s的最南站界),\n\n那么对于这个问题来说,\"the medieval fortress in diroldemort\"即指castle located within or near village which itself lies just north/south ?\n\n这里可能有些混乱需要理清:\n\n问题中的medieval fortress是_dirilton_ castile_ ,它位于东洛斯丹郡的_dirilton_村内吗？（是的）\n\n然后问这个castile向南边的coastal area是什么名字?\n\n根据上下文[3], 这个castile所在的village以及castle本身构成了yelllowCraigs区域的南部边界,\n\n也就是说,yelllowCraigs区域的南部边缘就是这些地方(your village + castile),\n\n反过来就是说,yelllowCraigs 区域在铸币厂的正北方还是正南方呢?\n\n假设地图大致如下:\n\n朝东的方向为右方:\n\nNorth Berwick West Links Golf Course |东部\n\nArcherfield Estate |西侧\n\nSouthwards direction leads towards your village(Dirilton)and castile(DiriltonCastle)\n\n同时,YellowCraigs作为一个沿海区域(North facing firth forth),其东南侧可能有其他结构吗?\n\n不过关键点是[yelllowCraigs]的区域向南路是由village和castle组成的线段构成的边境线.\n\n这意味着铸币厂(village + castle)处于yelllowCraigs区域的正南方吗？\n\n如果是这样,yelllow Craig’s 区域实际上是在铸币厂的正北方 ?\n\n那这样的话铸币厂(Dirilton及其Castile)位于yelllow Craig’s的正南方 ?\n\n那问题就变成铸币厂(Dirilton及其Castile)的正南方有没有什么coastal area ?\n\n但按照上下文的信息来看,YellowCraigs的区域本身已经是一个临海的区域了(因为它向北面对着firth forth).\n\n所以铸币厂(Dirilton及其Castile)应该是在yelllow Craig’s的正东方还是东南方呢 ?\n\n另外还需要考虑地理位置的其他线索：\n\nContext[1]提到Castile lies around 2 miles west of North Berwick,...\n\nContext[3]提到North Berwick West Links golf course东部,YellowCraigs西部是Archerfield Estate等,golf courses通常建在海滨附近用于观景,...\n\n同时,YellowCraids的海岸线可能在它的西部或东部 ?\n\n不过回到原题的问题核心：\n\n用户的问题是关于中世纪要塞所在的_dirilton_村的正 Southern 方向有什么Coastal Area ?\n\n根据context[3], 这个Coastal Area就是YellowCraids itself ? 因为当你说铸币厂的South边有一个Coastal Area时,YellowCraids作为临海地带可能在铸币厂的Southside ?\n\n但是按照之前的分析,YellowCraids的区域是被其南北两侧的结构所界定:\n\nNorth boundary : Firth Of Forth (sea)\n\nSouth boundary : Village And Castile\n\nEast boundary : Golf Course near North Berwick West Links\n\nWest boundary : Archerfield Estate etc...\n\n这意味着整个YellowCraids是一个四边形形状的区域,North边靠海,Fouth海湾; South边靠Village And Castile; East边靠高尔夫球场; West边靠庄园和高尔夫球场.\n\n因此在这个情况下,Castile 所处的位置是在YellowCraids的正 South 边界的线上吗 ?\n\n如果是这样,Castile就紧邻着YellowCraids区域的 South 边界线,\n\n那么对于Castile来说(Southern 方向),它所处的位置就是紧邻着这个Coastal Area(YellowCraids).\n\n但是问题是这样的：\"the medieval fortress in dir튼ton,bordering on its own southerly coast what?\"\n\n也就是要找出该要塞自己的 Southern 边界的Coastal Area名称是什么 ?\n\n如果Castile处于Village里面的话(Village And Castle together form part of South boundary for Yellow Craughts),\n\n那么Castle本身的 Southern 方向是否有其他Coастаl Areas呢 ? 根据现有信息没有提到更大的 Coastal Areas beyond this point.\n\n或许正确的答案是黄色螃蟹区(Yellow Craughts)，因为虽然它处于较北的位置(相对于某些地方而言)，但在Context[3]中被明确称为一个 Coastal Areas的一部分(\"partly within FSSSI\")且其North boundary是Forth sea,Bordering于Sea itself可能是最大的 Coastal Areas在这里指的是自己所在的那个海域的一部分 ?\n\n或者是否存在其他可能的Coастаl Areas名称没有被直接提及但在Context中有线索指向的可能？\n\n再检查所有提供的context内容是否有遗漏的信息：\n\nContext[5]: 提到了Direction Kirk的具体坐标和其他细节但不涉及海岸线;\n\nContext[4]: Scottish Borders administrative region,bordering various places but not directly related;\n\nContext[2]:Lothan & Borders regions including East Lothan where all these locations are;\n\nTherefore唯一提到的Coастаl Areas就是 contexts中的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到的 contexts 0提到了 context [3]中的黄色螃蟹区(Yellow Craughts).\n\nTherefore答案应该是黄色螃蟹区(Yellow Craughts).\n\n不过需要确认是否正确对应关系：\n\nBecause according to context [3], when you go South from yellow cрагgс you reach dирльтон и его замок и деревню — это значит что замок находится на границе с黄色的螃蟹区 в юго-западной части黄色的螃蟹区的 границе на юге ? 或者 как это работает...\n\nAlternatively perhaps there was confusion between 'south' as being adjacent versus being positioned further along latitude lines.\n\nAnother approach could be using coordinates or distances mentioned elsewhere but not sure if needed here.\n\nAlternatively perhaps considering that since yellow cрагgс has northern border as firth forth which connects into larger sea areas like North Sea or English Channel but since it's called an SSSI site due partly being within firth forth SSSI which implies it's part of an important ecological coastal zone there might not be another named coastal area beyond what's stated here except possibly referring back as firth forth but since firth forth already mentioned as northern border...\n\nWait but according to context [1], DirectiontonCastle lies around two miles west от North Berwick — so North Berwick town would be east от DirectiontonCastle location? Or vice versa?\n\nWait no,North Berwick town would be east от DirectiontonCastle because DirectiontonCastle lies around two miles west от North Berwick — so DistanceotonCastle → walk two miles west → reach North Berwick town → so DistanceotonCastle is west от North Berwick town location-wise,making sense geographically since most towns are along coasts,near rivers etc.,but perhaps not critical here.)\n\nBut back main issue:yếu tố chính là确定 whether 黄色螃蟹区(Yeallow Craights?) 是那个要塞(southern coast)?\n\nBased upon context [3]'s description,\"south\" của yellow cрагgс là dирльтон деревня и замок — 所以 these structures are located immediately 남쪽 của yellow cрагgс regions — meaning they are positioned just beyond/yet adjacent к южной границе этого региона в виде деревни и замка на его юге .\n\nThus для замка который находится в деревне дирльтон来说,southern coast của him будет что есть immediately 남쪽 của his location — which accordingly контекст указывает это как part của yellow cрагgс regions' граница на юге .\n\nBut wait,a 'bordering' situation can sometimes mean mutual adjacency between two regions:a и b each have their respective sides touching each other .\n\nIf黄色的螃蟹区的 southern edge touches dирльтон деревня и замок , then dирльтон деревня и замок lie just outside黄色的螃蟹区的 southernmost point .\n\nIn such case,dирльтон замок situated just outside黄色的螃蟹区的 southern edge , thus his own southerly coast would face whatever comes next beyond黄色的螃蟹区 .\n\nHowever according到提供的 контекст没有 information about anything beyond黄色的螃蟹区的 southern edge . Therefore perhaps there isn't any other named coastal areas further down ，and thus ответом является сам黄色螃蟹区 ，since he sits right next к егою южной границе . But this seems conflicting because if he sits right next к южной границе黄色的螃蟹区的 ，then his own southerly coast should coincide with黄色的螃蟹区的southern edge ，meaning they share this line . Thus回答 could still be 黄色螃蟹区 ，since their boundaries touch each other . \n\nHowever中文翻译可能会有些混淆术语的问题需要注意。\n</think>\nAnswer: The medieval fortress in Dirleton borders on its southerly coast **Yellowcraigs**.\n</think>\nAnswer: The medieval fortress in Dir亿吨量级交易对冲基金管理规模突破百亿人民币\n\nAnswer: The medieval fortress in Dirleton borders on its southerly coast **Yellowcraigs**.\n</think>\nAnswer: The medieval fortress in Dir亿吨量级交易对冲基金管理规模突破百亿人民币\n<think>\n嗯，用户的问题是关于苏格兰东洛斯丹郡迪尔顿村的",
+      "predict": "Key info comes from Context",
       "em": 0.0,
-      "f1": 0.0012135922330097088,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1707,7 +1707,7 @@
       "example_id": "5add61d65542995b365fab21",
       "question": "What type of forum did a former Soviet statesman initiate?",
       "gold": "Organizations could come together to address global issues",
-      "predict": "Answer: Mikhail Suslov initiated internal Communist Party forums promoting discussion on governance structures (party democracy).",
+      "predict": "no",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1743,10 +1743,10 @@
       "example_id": "5a8e068b5542995085b37384",
       "question": "Are Ferocactus and Silene both types of plant?",
       "gold": "yes",
-      "predict": "Answer: Yes, both Ferocactus (cacti) and Silene (flowering plants) belong to the plant kingdom.",
-      "em": 0.0,
-      "f1": 0.14285714285714288,
-      "category": "incorrect_answer",
+      "predict": "yes",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Silene menziesii",
@@ -1779,10 +1779,10 @@
       "example_id": "5abbf698554299114383a0b5",
       "question": "Which British first-generation jet-powered medium bomber was used in the South West Pacific theatre of World War II?",
       "gold": "English Electric Canberra",
-      "predict": "Answer: None explicitly stated; however based on available data:\nThe English Electric Canberra ([2]) was a UK-developed first-gen jet medium bomber entering service post-WWII (May 1951) thus unavailable for wartime operations.\nNo other UK jets are mentioned within provided contexts.\nAnswer must adhere strictly to given",
-      "em": 0.0,
-      "f1": 0.1276595744680851,
-      "category": "incorrect_answer",
+      "predict": "English Electric Canberra",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Tupolev Tu-12",
