@@ -14,11 +14,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RESULTS_PATH = PROJECT_ROOT / "artifacts" / "eval_results.json"
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,26 +30,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--results",
         type=Path,
-        default=DEFAULT_RESULTS_PATH,
-        help="Path to the JSON results written by run_eval.py (--results-out).",
+        default=None,
+        help="Path to the JSON results written by run_eval.py (--results-out). "
+        "Defaults to artifacts/eval_results_<current-model>.json.",
     )
     parser.add_argument(
         "--hist-out",
         type=Path,
-        default=PROJECT_ROOT / "artifacts" / "results_hist.png",
-        help="Histogram output path.",
+        default=None,
+        help="Histogram output path. Defaults to artifacts/results_hist_<model>.png.",
     )
     parser.add_argument(
         "--stats-out",
         type=Path,
-        default=PROJECT_ROOT / "artifacts" / "result_stats.md",
-        help="Stats markdown output.",
+        default=None,
+        help="Stats markdown output. Defaults to artifacts/result_stats_<model>.md.",
     )
     return parser.parse_args()
 
 
 def main() -> None:
+    from rag_learning.config import model_slug
+
     args = parse_args()
+
+    # Default input: the results file for the model currently set in .env.
+    if args.results is None:
+        args.results = ARTIFACTS_DIR / f"eval_results_{model_slug()}.json"
 
     if not args.results.exists():
         raise FileNotFoundError(
@@ -80,6 +89,16 @@ def main() -> None:
     em_scores = [r["em"] for r in results]
     f1_scores = [r["f1"] for r in results]
 
+    model = config.get("model", "unknown")
+
+    # Name outputs after the model recorded in the results file, so different
+    # models produce distinct artifacts instead of overwriting each other.
+    slug = model_slug(model)
+    if args.hist_out is None:
+        args.hist_out = ARTIFACTS_DIR / f"results_hist_{slug}.png"
+    if args.stats_out is None:
+        args.stats_out = ARTIFACTS_DIR / f"result_stats_{slug}.md"
+
     avg_em = summary.get("avg_em", sum(em_scores) / len(em_scores))
     avg_f1 = summary.get("avg_f1", sum(f1_scores) / len(f1_scores))
 
@@ -92,7 +111,7 @@ def main() -> None:
     print("=" * 80)
     print("Evaluation Summary (from run_eval.py results):")
     print(f"  Results file: {args.results}")
-    print(f"  Model:        {config.get('model', 'unknown')}")
+    print(f"  Model:        {model}")
     print(f"  Split/limit/top_k: {config.get('split')}/{config.get('limit')}/{config.get('top_k')}")
     print(f"  Total examples: {total}")
     print(f"  Average EM: {avg_em:.3f} ({avg_em * 100:.1f}%)")
@@ -108,7 +127,8 @@ def main() -> None:
     args.stats_out.parent.mkdir(parents=True, exist_ok=True)
     with args.stats_out.open("w", encoding="utf-8") as f:
         f.write("# Evaluation Results\n\n")
-        f.write(f"- Model: `{config.get('model', 'unknown')}`\n")
+        f.write(f"**测试模型 (LLM): `{model}`**\n\n")
+        f.write(f"- Model: `{model}`\n")
         f.write(f"- Dataset split: `{config.get('split')}`\n")
         f.write(f"- Number of examples: {config.get('limit', total)}\n")
         f.write(f"- Top-k retrieval: {config.get('top_k')}\n\n")
@@ -130,7 +150,7 @@ def main() -> None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    _, axs = plt.subplots(1, 2, figsize=(12, 4))
+    _, axs = plt.subplots(1, 2, figsize=(12, 4.5))
     bins = [0, 0.25, 0.5, 0.75, 1.0]
     axs[0].hist(em_scores, bins=bins, edgecolor="black")
     axs[0].set_title("Exact Match (EM) Distribution")
@@ -142,7 +162,13 @@ def main() -> None:
     axs[1].set_xlabel("F1 Score")
     axs[1].set_ylabel("Count")
     axs[1].set_xticks(bins)
-    plt.tight_layout()
+    plt.suptitle(
+        f"LLM: {model}  |  split={config.get('split')}, "
+        f"n={total}, top_k={config.get('top_k')}  |  "
+        f"EM={avg_em * 100:.1f}%, F1={avg_f1 * 100:.1f}%",
+        fontsize=12,
+    )
+    plt.tight_layout(rect=(0, 0, 1, 0.95))
     plt.savefig(args.hist_out, dpi=150, bbox_inches="tight")
     print(f"Saved histogram to {args.hist_out}")
     plt.close()

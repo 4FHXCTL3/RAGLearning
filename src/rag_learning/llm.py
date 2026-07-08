@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import httpx
 from openai import OpenAI
 
 from rag_learning import config
+
+
+def _is_local(url: str) -> bool:
+    return "localhost" in url or "127.0.0.1" in url
 
 
 class ChatLLM:
@@ -17,9 +22,19 @@ class ChatLLM:
         self.model = model or config.LLM_MODEL
         self.temperature = temperature
         self.max_tokens = max_tokens
+        resolved_base_url = base_url or config.OPENAI_BASE_URL
+
+        # When talking to a local server (e.g. Ollama on localhost), bypass any
+        # system proxy set by a VPN. httpx honours HTTP(S)_PROXY by default, which
+        # routes localhost requests through the proxy and makes it return 502.
+        http_client = None
+        if _is_local(resolved_base_url):
+            http_client = httpx.Client(trust_env=False)
+
         self.client = OpenAI(
             api_key=api_key or config.require_api_key(),
-            base_url=base_url or config.OPENAI_BASE_URL,
+            base_url=resolved_base_url,
+            http_client=http_client,
         )
 
     def generate(self, prompt: str, system_prompt: str | None = None) -> str:

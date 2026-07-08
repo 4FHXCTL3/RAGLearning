@@ -4,16 +4,16 @@
 
 - 数据集：HotpotQA `distractor` 配置；
 - 检索器：BM25，先作为简单 baseline；
-- LLM：通过硅基流动 SiliconFlow 的 OpenAI-compatible API 调用 Qwen 等在线模型；
+- LLM：通过本地 Ollama 的 OpenAI-compatible API 调用 `llama3.2:3b`；
 - 评估：简化版 Exact Match 与 token F1。
 
-> 本项目不会下载完整大模型。是否有免费 API 额度取决于硅基流动平台当前政策和你选择的模型。
+> LLM 在本地 Ollama 上运行，无需 API Key、无联网调用费用。代码仍走 OpenAI-compatible 接口，因此改回在线 API（如硅基流动 SiliconFlow）只需修改 `.env`。
 
 ## 1. 项目结构
 
 ```text
 .
-├── .env.example                 # SiliconFlow API 配置模板
+├── .env                         # LLM 配置（本地 Ollama / 在线 API）
 ├── README.md
 ├── requirements.txt
 ├── artifacts/                   # 保存 BM25 索引等产物
@@ -25,7 +25,7 @@
     ├── data.py                  # HotpotQA 加载与段落文档转换
     ├── evaluate.py              # EM/F1 指标
     ├── index.py                 # BM25 索引
-    ├── llm.py                   # SiliconFlow/OpenAI-compatible LLM 调用
+    ├── llm.py                   # OpenAI-compatible LLM 调用（本地地址自动绕过代理）
     └── rag.py                   # RAG 检索与回答流程
 ```
 
@@ -56,32 +56,39 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 3. 配置硅基流动 SiliconFlow API
+## 3. 配置本地 Ollama LLM
 
-1. 登录硅基流动平台，创建 API Key。
-2. 复制环境变量模板：
+本项目默认用本地 [Ollama](https://ollama.com) 运行 `llama3.2:3b`。
 
-   Windows PowerShell：
-
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
-   macOS / Linux / Git Bash：
+1. 安装 Ollama 并拉取模型：
 
    ```bash
-   cp .env.example .env
+   ollama pull llama3.2:3b
    ```
 
-3. 编辑 `.env`：
+   确认 Ollama 服务在运行（默认监听 `http://localhost:11434`）。
+
+2. 在项目根目录创建 `.env` 文件（本地 Ollama 无需真实 API Key，占位即可）：
 
 ```env
-OPENAI_API_KEY=你的硅基流动 API Key
+OPENAI_API_KEY=ollama
+OPENAI_BASE_URL=http://localhost:11434/v1
+LLM_MODEL=llama3.2:3b
+```
+
+> **关于 VPN / 代理**：`llm.py` 会自动识别本地地址（`localhost` / `127.0.0.1`）并绕过系统代理，因此开着 VPN 下载数据集时，本地 LLM 调用也不会被代理拦截导致 502，无需手动开关 VPN。
+
+### 改用在线 API（可选）
+
+如需换成硅基流动 SiliconFlow 等在线服务，把 `.env` 改为：
+
+```env
+OPENAI_API_KEY=你的 API Key
 OPENAI_BASE_URL=https://api.siliconflow.cn/v1
 LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
 ```
 
-`LLM_MODEL` 请以硅基流动控制台或模型广场中你账号当前可调用的模型名为准。如果报“模型不存在”或“无权限”，就把这里替换成你能调用的免费/可用模型。
+`LLM_MODEL` 以对应平台当前可调用的模型名为准。
 
 ## 4. 构建 HotpotQA 检索索引
 
@@ -108,7 +115,7 @@ python scripts/build_index.py --split train --limit 1000
 
 ## 5. 运行 RAG 验证
 
-确认 `.env` 已经填好 API Key 后，运行：
+确认 `.env` 已配好、Ollama 服务在运行后，运行：
 
 ```bash
 python scripts/run_eval.py --split validation --limit 2 --top-k 5
@@ -140,18 +147,22 @@ python scripts/run_eval.py --split validation --limit 10 --top-k 5
 
 ## 7. 常见问题
 
-### 这个项目会不会下载整个 Qwen 模型？
+### 这个项目会下载大模型吗？
 
-不会。LLM 通过 SiliconFlow API 调用，代码只发送 prompt 和接收答案。
+会下载 LLM 权重，但由 Ollama 管理（`ollama pull llama3.2:3b`，约 2GB），而不是每次运行时下载。代码本身只通过本地 API 发送 prompt、接收答案。
 
-### 为什么还会下载东西？
+### 为什么运行时还会下载东西？
 
-`datasets` 会下载 HotpotQA 数据集，这是数据集，不是大语言模型。
+`datasets` 会下载 HotpotQA 数据集，这是数据集，不是大语言模型。首次下载后会走本地缓存。
 
-### 没有 API Key 能跑吗？
+### 为什么开着 VPN 会报 502？
 
-可以构建 BM25 索引；但运行 `run_eval.py` 调用 LLM 时必须配置 API Key。
+VPN 会设置系统代理，httpx 默认会把连本地 Ollama 的请求也走代理，导致 502。`llm.py` 已对本地地址自动绕过代理，所以现在开着 VPN 也能正常调用本地 LLM。
 
-### API 是完全免费的吗？
+### 会用到 GPU 吗？
 
-代码无法保证平台永久免费。请在硅基流动控制台查看当前免费额度、可免费调用的模型和计费规则。
+Ollama 会自动使用可用的 NVIDIA GPU。可用 `ollama ps` 查看 `PROCESSOR` 列确认是否为 GPU。
+
+### 没有 GPU / 想换在线 API 能跑吗？
+
+可以。Ollama 无 GPU 时会用 CPU（较慢）。也可按第 3 节改用在线 API。

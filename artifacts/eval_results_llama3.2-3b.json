@@ -3,12 +3,12 @@
     "split": "validation",
     "limit": 50,
     "top_k": 5,
-    "model": "THUDM/GLM-Z1-9B-0414"
+    "model": "llama3.2:3b"
   },
   "summary": {
     "num_examples": 50,
     "avg_em": 0.38,
-    "avg_f1": 0.46902857142857146
+    "avg_f1": 0.5030952380952382
   },
   "results": [
     {
@@ -51,7 +51,7 @@
       "example_id": "5a8c7595554299585d9e36b6",
       "question": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
       "gold": "Chief of Protocol",
-      "predict": "no",
+      "predict": "17-year-old Shirley Temple played Corliss Archer",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -87,10 +87,10 @@
       "example_id": "5a85ea095542994775f606a8",
       "question": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
       "gold": "Animorphs",
-      "predict": "",
-      "em": 0.0,
-      "f1": 0.0,
-      "category": "incorrect_answer",
+      "predict": "Animorphs",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Animorphs",
@@ -123,10 +123,10 @@
       "example_id": "5adbf0a255429947ff17385a",
       "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
       "gold": "no",
-      "predict": "no",
-      "em": 1.0,
-      "f1": 1.0,
-      "category": "correct",
+      "predict": "yes",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
       "retrieved_contexts": [
         {
           "title": "Esma Sultan Mansion",
@@ -159,9 +159,9 @@
       "example_id": "5a8e3ea95542995a26add48d",
       "question": "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
       "gold": "Greenwich Village, New York City",
-      "predict": "no",
+      "predict": "New York City",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.7499999999999999,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -231,10 +231,10 @@
       "example_id": "5a85b2d95542997b5ce40028",
       "question": "Who was known by his stage name Aladin and helped organizations improve their performance as a consultant?",
       "gold": "Eenasul Fateh",
-      "predict": "Aladin Eenasul Fateh",
-      "em": 0.0,
-      "f1": 0.8,
-      "category": "incorrect_answer",
+      "predict": "Eenasul Fateh",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Eenasul Fateh",
@@ -267,7 +267,7 @@
       "example_id": "5a87ab905542996e4f3088c1",
       "question": "The arena where the Lewiston Maineiacs played their home games can seat how many people?",
       "gold": "3,677 seated",
-      "predict": "no",
+      "predict": "9,000",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -303,7 +303,7 @@
       "example_id": "5a7bbb64554299042af8f7cc",
       "question": "Who is older, Annie Morton or Terry Richardson?",
       "gold": "Terry Richardson",
-      "predict": "no",
+      "predict": "1965",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -339,10 +339,10 @@
       "example_id": "5a8db19d5542994ba4e3dd00",
       "question": "Are Local H and For Against both from the United States?",
       "gold": "yes",
-      "predict": "yes",
-      "em": 1.0,
-      "f1": 1.0,
-      "category": "correct",
+      "predict": "no",
+      "em": 0.0,
+      "f1": 0.0,
+      "category": "incorrect_answer",
       "retrieved_contexts": [
         {
           "title": "Amherst, Massachusetts",
@@ -375,9 +375,9 @@
       "example_id": "5a7166395542994082a3e814",
       "question": "What is the name of the fight song of the university whose main campus is in Lawrence, Kansas and whose branch campuses are in the Kansas City metropolitan area?",
       "gold": "Kansas Song",
-      "predict": "no",
+      "predict": "KU Fight Song",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.4,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -519,9 +519,9 @@
       "example_id": "5ab6d09255429954757d337d",
       "question": "The football manager who recruited David Beckham managed Manchester United during what timeframe?",
       "gold": "from 1986 to 2013",
-      "predict": "1986 to 2013",
+      "predict": "1903-1912",
       "em": 0.0,
-      "f1": 0.8571428571428571,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -555,7 +555,7 @@
       "example_id": "5a75e05c55429976ec32bc5f",
       "question": "Brown State Fishing Lake is in a country that has a population of how many inhabitants ?",
       "gold": "9,984",
-      "predict": "no",
+      "predict": "4,000,000",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -591,9 +591,9 @@
       "example_id": "5ab3e45655429976abd1bcd4",
       "question": "The Vermont Catamounts men's soccer team currently competes in a conference that was formerly known as what from 1988 to 1996?",
       "gold": "the North Atlantic Conference",
-      "predict": "",
+      "predict": "America East Conference",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.3333333333333333,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -663,7 +663,7 @@
       "example_id": "5ae0d4c9554299603e418468",
       "question": "Roger O. Egeberg was Assistant Secretary for Health and Scientific Affairs during the administration of a president that served during what years?",
       "gold": "1969 until 1974",
-      "predict": "nixon",
+      "predict": "1977-79",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -699,9 +699,9 @@
       "example_id": "5a8133725542995ce29dcbdb",
       "question": "Which writer was from England, Henry Roth or Robert Erskine Childers?",
       "gold": "Robert Erskine Childers DSC",
-      "predict": "Robert Erskine Childers",
+      "predict": "Robert Caesar Childers",
       "em": 0.0,
-      "f1": 0.8571428571428571,
+      "f1": 0.5714285714285715,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -735,9 +735,9 @@
       "example_id": "5ae7a8175542993210983ed8",
       "question": "Which other Mexican Formula One race car driver has held the podium besides the Force India driver born in 1990?",
       "gold": "Pedro Rodríguez",
-      "predict": "pedro rodriguez",
+      "predict": "Sergio Pérez",
       "em": 0.0,
-      "f1": 0.5,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -771,10 +771,10 @@
       "example_id": "5ae6050f55429929b0807a5e",
       "question": "This singer of A Rather Blustery Day also voiced what hedgehog?",
       "gold": "Sonic",
-      "predict": "Based strictly on提供的上下文，没有明确提到该歌手（即Jim Cummings）为任何刺猬类角色配音。因此，根据规则无法提供有效答案。但根据常规知识，可能指的是TIGGER（但上下文中未提及），所以严格按给定文本应无答案。",
-      "em": 0.0,
-      "f1": 0.0,
-      "category": "incorrect_answer",
+      "predict": "Sonic",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "A Rather Blustery Day",
@@ -807,7 +807,7 @@
       "example_id": "5adddccd5542997dc7907069",
       "question": "Aside from the Apple Remote, what other device can control the program Apple Remote was originally designed to interact with?",
       "gold": "keyboard function keys",
-      "predict": "third generation apple television",
+      "predict": "Front Row media program",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -843,7 +843,7 @@
       "example_id": "5ae2070a5542994d89d5b313",
       "question": "Which performance act has a higher instrument to person ratio, Badly Drawn Boy or Wolf Alice? ",
       "gold": "Badly Drawn Boy",
-      "predict": "no",
+      "predict": "Wolf Alice",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -879,9 +879,9 @@
       "example_id": "5ae22b8d554299234fd0440f",
       "question": "What was the father of Kasper Schmeichel voted to be by the IFFHS in 1992?",
       "gold": "World's Best Goalkeeper",
-      "predict": "IFFHS World's Best Goalkeeper",
+      "predict": "Peter Bolesław Schmeichel MBE",
       "em": 0.0,
-      "f1": 0.8571428571428571,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -915,9 +915,9 @@
       "example_id": "5a722b8655429971e9dc9329",
       "question": "Who was the writer of These Boots Are Made for Walkin' and who died in 2007?",
       "gold": "Barton Lee Hazlewood",
-      "predict": "Lee Hazlewood Nancy Sinatra Kon Kan KMFDM Boots EP album Kon Kan Canadian synthpop project Barry Harris Toronto Ontario Juno Award song I Beg Your Pardon Puss N' Boots These Boots Are Made for Walkin' Billboard Hot 100 UK Singles Chart October 1989 #11 New Zealand #61",
+      "predict": "Lee Hazlewood",
       "em": 0.0,
-      "f1": 0.08,
+      "f1": 0.8,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -951,7 +951,7 @@
       "example_id": "5adf37a95542995ec70e8f97",
       "question": "The 2011–12 VCU Rams men's basketball team, led by third year head coach Shaka Smart, represented Virginia Commonwealth University which was founded in what year?",
       "gold": "1838",
-      "predict": "no",
+      "predict": "1984",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1023,9 +1023,9 @@
       "example_id": "5a828c8355429966c78a6a50",
       "question": "Kaiser Ventures corporation was founded by an American industrialist who became known as the father of modern American shipbuilding?",
       "gold": "Henry J. Kaiser",
-      "predict": "yes",
+      "predict": "Henry J",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.8,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1059,9 +1059,9 @@
       "example_id": "5a8a3e745542996c9b8d5e70",
       "question": "What is the name for the adventure in \"Tunnels and Trolls\", a game designed by Ken St. Andre?",
       "gold": "Arena of Khazan",
-      "predict": "",
+      "predict": "Crusaders of Khazan",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.6666666666666666,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1095,9 +1095,9 @@
       "example_id": "5ac23ff0554299636651994d",
       "question": "When was Poison's album \"Shut Up, Make Love\" released?",
       "gold": "2000",
-      "predict": "March 14",
+      "predict": "March 14, 2000",
       "em": 0.0,
-      "f1": 0.0,
+      "f1": 0.5,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1167,9 +1167,9 @@
       "example_id": "5ae0361155429925eb1afc2c",
       "question": "Which  French ace pilot and adventurer fly L'Oiseau Blanc",
       "gold": "Charles Eugène",
-      "predict": "Charles Nungesser",
+      "predict": "François Coli",
       "em": 0.0,
-      "f1": 0.5,
+      "f1": 0.0,
       "category": "incorrect_answer",
       "retrieved_contexts": [
         {
@@ -1239,7 +1239,7 @@
       "example_id": "5a7cc50e554299452d57ba3e",
       "question": "Which band, Letters to Cleo or Screaming Trees, had more members?",
       "gold": "Letters to Cleo",
-      "predict": "letters to cleo",
+      "predict": "Letters to Cleo",
       "em": 1.0,
       "f1": 1.0,
       "category": "correct",
@@ -1347,10 +1347,10 @@
       "example_id": "5a80721b554299485f5985ef",
       "question": "The Livesey Hal War Memorial commemorates the fallen of which war, that had over 60 million casualties?",
       "gold": "World War II",
-      "predict": "World War II",
-      "em": 1.0,
-      "f1": 1.0,
-      "category": "correct",
+      "predict": "World War I",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
       "retrieved_contexts": [
         {
           "title": "Livesey Hall War Memorial",
@@ -1419,7 +1419,7 @@
       "example_id": "5a7571135542992d0ec05f98",
       "question": "Ralph Hefferline was a psychology professor at a university that is located in what city?",
       "gold": "New York City",
-      "predict": "no",
+      "predict": "Muncie",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1491,7 +1491,7 @@
       "example_id": "5a74106b55429979e288289e",
       "question": "Where is the company that Sachin Warrier worked for as a software engineer headquartered? ",
       "gold": "Mumbai",
-      "predict": "no",
+      "predict": "Kochi",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1527,7 +1527,7 @@
       "example_id": "5a79311755429970f5fffe67",
       "question": "A Japanese manga series based on a 16 year old high school student Ichitaka Seto, is written and illustrated by someone born in what year?",
       "gold": "1962",
-      "predict": "no",
+      "predict": "1992",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1563,10 +1563,10 @@
       "example_id": "5ab2d3df554299194fa9352c",
       "question": "The battle in which Giuseppe Arimondi lost his life secured what for Ethiopia?",
       "gold": "sovereignty",
-      "predict": "sovereignty",
-      "em": 1.0,
-      "f1": 1.0,
-      "category": "correct",
+      "predict": "Ethiopian sovereignty",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "category": "incorrect_answer",
       "retrieved_contexts": [
         {
           "title": "Battle of Adwa",
@@ -1599,10 +1599,10 @@
       "example_id": "5a760ab65542994ccc918697",
       "question": "Alfred Balk served as the secretary of the Committee on the Employment of Minority Groups in the News Media under which United States Vice President?",
       "gold": "Nelson Rockefeller",
-      "predict": "no",
-      "em": 0.0,
-      "f1": 0.0,
-      "category": "incorrect_answer",
+      "predict": "Nelson Rockefeller",
+      "em": 1.0,
+      "f1": 1.0,
+      "category": "correct",
       "retrieved_contexts": [
         {
           "title": "Alfred Balk",
@@ -1635,7 +1635,7 @@
       "example_id": "5a7d54165542995f4f402256",
       "question": "A medieval fortress in Dirleton, East Lothian, Scotland borders on the south side of what coastal area?",
       "gold": "Yellowcraig",
-      "predict": "Key info comes from Context",
+      "predict": "Firth of Forth",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",
@@ -1707,7 +1707,7 @@
       "example_id": "5add61d65542995b365fab21",
       "question": "What type of forum did a former Soviet statesman initiate?",
       "gold": "Organizations could come together to address global issues",
-      "predict": "no",
+      "predict": "Party",
       "em": 0.0,
       "f1": 0.0,
       "category": "incorrect_answer",

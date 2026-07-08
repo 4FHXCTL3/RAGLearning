@@ -21,7 +21,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from rag_learning.config import DEFAULT_INDEX_PATH
 
-DEFAULT_RESULTS_PATH = PROJECT_ROOT / "artifacts" / "eval_results.json"
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,8 +33,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--results-out",
         type=Path,
-        default=DEFAULT_RESULTS_PATH,
-        help="Where to save detailed evaluation results as JSON (used by visualize_results.py).",
+        default=None,
+        help="Where to save detailed evaluation results as JSON (used by visualize_results.py). "
+        "Defaults to artifacts/eval_results_<model>.json so different models don't overwrite each other.",
     )
     return parser.parse_args()
 
@@ -55,6 +56,12 @@ def main() -> None:
     examples = load_examples(split=args.split, limit=args.limit)
     index = BM25Index.load(args.index)
     pipeline = RAGPipeline(index=index, llm=ChatLLM())
+
+    # Name the results file after the model so different LLM runs don't
+    # overwrite each other (e.g. eval_results_llama3.2-3b.json).
+    if args.results_out is None:
+        from rag_learning.config import model_slug
+        args.results_out = ARTIFACTS_DIR / f"eval_results_{model_slug(pipeline.llm.model)}.json"
 
     em_scores: list[float] = []
     f1_scores: list[float] = []
