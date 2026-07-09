@@ -8,6 +8,7 @@ venv/
 # Project artifacts
 artifacts/*.pkl
 artifacts/*.jsonl
+artifacts/*.log
 
 # OS / editor
 .DS_Store

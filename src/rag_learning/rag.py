@@ -65,6 +65,54 @@ def clean_answer(raw: str) -> str:
     return text.rstrip(".").strip()
 
 
+_WORD_RE = re.compile(r"\w+", re.UNICODE)
+
+
+def align_to_context(answer: str, contexts: list["RetrievedContext"], threshold: float = 0.5) -> str:
+    """Snap a paraphrased answer onto the exact span it matches in the context.
+
+    HotpotQA is scored by exact-span EM/F1, so a correct-but-reworded answer
+    (extra words, reordering, spelling variants) loses points. We slide a window
+    over each retrieved paragraph and, if a window's token Jaccard overlap with
+    the answer clears `threshold`, return that window's *original* substring so
+    it matches the gold span verbatim. yes/no and empty answers are left as-is.
+    """
+    ans = (answer or "").strip()
+    if not ans or ans.lower() in {"yes", "no", "unknown"}:
+        return ans
+
+    ans_tokens = [m.group(0).lower() for m in _WORD_RE.finditer(ans)]
+    if not ans_tokens:
+        return ans
+    ans_set = set(ans_tokens)
+    n = len(ans_tokens)
+
+    best_score = 0.0
+    best_span = None
+    for ctx in contexts:
+        text = ctx.text or ""
+        matches = list(_WORD_RE.finditer(text))
+        if not matches:
+            continue
+        # Try window sizes around the answer length to tolerate minor length diffs.
+        for win in {max(1, n - 1), n, n + 1}:
+            for start in range(0, max(1, len(matches) - win + 1)):
+                window = matches[start:start + win]
+                if not window:
+                    continue
+                win_set = {m.group(0).lower() for m in window}
+                inter = len(ans_set & win_set)
+                union = len(ans_set | win_set)
+                score = inter / union if union else 0.0
+                if score > best_score:
+                    best_score = score
+                    best_span = text[window[0].start():window[-1].end()]
+
+    if best_span is not None and best_score >= threshold:
+        return best_span.strip()
+    return ans
+
+
 def build_prompt(question: str, contexts: list[RetrievedContext]) -> str:
     context_text = "\n\n".join(
         f"[{index}] Title: {ctx.title}\nContent: {ctx.text}"
@@ -91,4 +139,5 @@ class RAGPipeline:
         prompt = build_prompt(question, contexts)
         answer = self.llm.generate(prompt, system_prompt=SYSTEM_PROMPT).strip()
         answer = clean_answer(answer)
+        answer = align_to_context(answer, contexts)
         return RAGResult(question=question, answer=answer, contexts=contexts)

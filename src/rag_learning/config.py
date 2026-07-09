@@ -15,6 +15,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.siliconflow.cn/v1")
 LLM_MODEL = os.getenv("LLM_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 
+# Embedding model for the State module (semantic metrics). Runs on local
+# Ollama alongside the chat model; the chat LLM stays LLM_MODEL. The base URL
+# is derived from OPENAI_BASE_URL when it points at a local Ollama server.
+EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
 
 def model_slug(model: str | None = None) -> str:
     """Turn a model name into a filename-safe slug.

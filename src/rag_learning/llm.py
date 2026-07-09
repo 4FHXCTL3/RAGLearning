@@ -37,7 +37,12 @@ class ChatLLM:
             http_client=http_client,
         )
 
-    def generate(self, prompt: str, system_prompt: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        temperature: float | None = None,
+    ) -> str:
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -46,7 +51,7 @@ class ChatLLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            temperature=self.temperature,
+            temperature=self.temperature if temperature is None else temperature,
             max_tokens=self.max_tokens,
             frequency_penalty=0.5,
         )

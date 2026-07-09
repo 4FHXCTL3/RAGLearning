@@ -143,6 +143,24 @@ def main() -> None:
         f.write(f"| Correct (EM > 0) | {correct} | {correct / total * 100:.1f}% |\n")
         f.write(f"| Rejected (unknown) | {rejected} | {rejected / total * 100:.1f}% |\n")
         f.write(f"| Incorrect answer | {incorrect} | {incorrect / total * 100:.1f}% |\n")
+
+        # Step 0 retrieval diagnostics (only present if run_eval recorded them).
+        if "avg_recall" in summary:
+            f.write("\n## Retrieval Diagnosis (Step 0)\n\n")
+            f.write("| Metric | Value |\n")
+            f.write("|--------|-------|\n")
+            f.write(f"| Avg Recall@{config.get('top_k')} (gold paragraphs) | "
+                    f"**{summary['avg_recall']:.3f}** |\n")
+            f.write(f"| Full-hit rate (all gold retrieved) | "
+                    f"**{summary.get('full_hit_rate', 0):.3f}** |\n\n")
+            f.write("**EM/F1 conditioned on retrieval** — separates "
+                    "\"fix retrieval\" from \"fix generation\":\n\n")
+            f.write("| Condition | EM | F1 |\n")
+            f.write("|-----------|----|----|\n")
+            f.write(f"| Gold fully retrieved | {summary.get('em_given_full_hit', 0):.3f} | "
+                    f"{summary.get('f1_given_full_hit', 0):.3f} |\n")
+            f.write(f"| Gold missed/partial | {summary.get('em_given_miss', 0):.3f} | "
+                    f"{summary.get('f1_given_miss', 0):.3f} |\n")
     print(f"Saved stats to {args.stats_out}")
 
     # plot histogram

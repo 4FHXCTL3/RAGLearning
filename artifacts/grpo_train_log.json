@@ -1,0 +1,26 @@
+{
+  "config": {
+    "split": "validation",
+    "limit": 120,
+    "epochs": 2,
+    "group_size": 3,
+    "max_retrievals": 2,
+    "lr": 0.05,
+    "seed": 0,
+    "index": "D:\\Research\\RAG\\rag_learning\\artifacts\\bm25_index.pkl",
+    "out": "artifacts\\policy.npz",
+    "log_out": "D:\\Research\\RAG\\rag_learning\\artifacts\\grpo_train_log.json"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "mean_return": 0.5440034231075113,
+      "mean_objective": -3.2381504884900407e-18
+    },
+    {
+      "epoch": 2,
+      "mean_return": 0.6151616439116439,
+      "mean_objective": 6.16790569236198e-19
+    }
+  ]
+}

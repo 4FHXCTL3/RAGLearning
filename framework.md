@@ -1,5 +1,5 @@
 模块1：状态与不确定性感知 (State & Uncertainty Perception)
-- 输入: 用户查询 qq，检索文档 DD，API生成的中间答案 ansans，上一轮文档 Dprev。
+- 输入: 用户查询 q，检索文档 D，API生成的中间答案 ans，上一轮文档 Dprev。
 - 核心计算 (Semantic Metrics):
   1. 语义熵 (Hsem): 衡量答案与文档的一致性。熵越高，模型越不确定。
   2. 数据不确定性 (Ua): 衡量文档集合内部的冲突程度（文档间相似度方差）。
