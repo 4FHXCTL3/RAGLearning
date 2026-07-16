@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import html
 import json
 from pathlib import Path
 import sys
@@ -19,22 +18,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from rag_learning.config import DEFAULT_INDEX_PATH
+from rag_learning.data import gold_titles
 
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 
-def _norm_title(title: str) -> str:
-    return html.unescape(title).strip().lower()
-
-
-def gold_titles(example) -> set[str]:
-    sf = example.get("supporting_facts") or {}
-    titles = sf.get("title", []) if isinstance(sf, dict) else []
-    return {_norm_title(t) for t in titles}
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the GRPO policy (framework module 2).")
+    parser.add_argument("--dataset", default="hotpotqa", help="Dataset: hotpotqa or 2wikimultihopqa.")
     parser.add_argument("--split", default="validation")
     parser.add_argument("--limit", type=int, default=120, help="Number of training questions.")
     parser.add_argument("--epochs", type=int, default=2)
@@ -83,9 +74,9 @@ def main() -> None:
 
     args = parse_args()
     if not args.index.exists():
-        raise FileNotFoundError(f"Index not found: {args.index}. Build it first.")
+        raise FileNotFoundError(f"Index not found: {args.index}. Run `python scripts/build_index.py --dataset {args.dataset} --split {args.split} --limit {args.limit}` first.")
 
-    examples = load_examples(split=args.split, limit=args.limit)
+    examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
     index = BM25Index.load(args.index)
     encoder = StateEncoder()
     llm = ChatLLM()
@@ -109,7 +100,7 @@ def main() -> None:
         for example in tqdm(examples, desc=f"epoch {epoch}"):
             question = example["question"]
             gold = example["answer"]
-            golds = gold_titles(example)
+            golds = gold_titles(example, dataset=args.dataset)
 
             # Observe the shared initial state once (expensive: LLM + embed).
             init_state = env.reset(question, gold, golds)

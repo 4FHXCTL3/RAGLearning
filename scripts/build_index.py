@@ -11,8 +11,9 @@ from rag_learning.config import DEFAULT_INDEX_PATH
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build a BM25 index from HotpotQA contexts.")
-    parser.add_argument("--split", default="validation", help="HotpotQA split, e.g. train or validation.")
+    parser = argparse.ArgumentParser(description="Build a BM25 index from multi-hop QA dataset contexts.")
+    parser.add_argument("--dataset", default="hotpotqa", help="Dataset: hotpotqa or 2wikimultihopqa.")
+    parser.add_argument("--split", default="validation", help="Dataset split, e.g. train or validation.")
     parser.add_argument("--limit", type=int, default=200, help="Number of examples to index for quick experiments.")
     parser.add_argument("--output", type=Path, default=DEFAULT_INDEX_PATH, help="Output index path.")
     return parser.parse_args()
@@ -23,11 +24,11 @@ def main() -> None:
     from rag_learning.index import BM25Index
 
     args = parse_args()
-    examples = load_examples(split=args.split, limit=args.limit)
-    documents = list(iter_context_paragraphs(examples))
+    examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
+    documents = list(iter_context_paragraphs(examples, dataset=args.dataset))
     index = BM25Index(documents)
     index.save(args.output)
-    print(f"Loaded {len(examples)} HotpotQA examples.")
+    print(f"Loaded {len(examples)} examples from {args.dataset} ({args.split} split).")
     print(f"Indexed {len(documents)} context paragraphs.")
     print(f"Saved BM25 index to {args.output}.")
 

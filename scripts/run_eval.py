@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import html
 import json
 from pathlib import Path
 import sys
@@ -21,24 +20,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from rag_learning.config import DEFAULT_INDEX_PATH
+from rag_learning.data import gold_titles, norm_title
 
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
-
-
-def _norm_title(title: str) -> str:
-    """Normalize a Wikipedia title for gold/retrieved matching.
-
-    Retrieved titles were html.unescaped when the index was built, so we do the
-    same to gold supporting-fact titles and compare case-insensitively.
-    """
-    return html.unescape(title).strip().lower()
-
-
-def gold_titles(example) -> set[str]:
-    """Set of normalized gold supporting-paragraph titles for one example."""
-    sf = example.get("supporting_facts") or {}
-    titles = sf.get("title", []) if isinstance(sf, dict) else []
-    return {_norm_title(t) for t in titles}
 
 
 def policy_answer(env, policy, question, gold_answer, golds, max_steps=6):
@@ -63,8 +47,9 @@ def policy_answer(env, policy, question, gold_answer, golds, max_steps=6):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a small HotpotQA RAG evaluation.")
-    parser.add_argument("--split", default="validation", help="HotpotQA split, e.g. train or validation.")
+    parser = argparse.ArgumentParser(description="Run a small multi-hop QA RAG evaluation.")
+    parser.add_argument("--dataset", default="hotpotqa", help="Dataset: hotpotqa or 2wikimultihopqa.")
+    parser.add_argument("--split", default="validation", help="Dataset split, e.g. train or validation.")
     parser.add_argument("--limit", type=int, default=5, help="Number of examples to evaluate.")
     parser.add_argument("--top-k", type=int, default=10, help="Number of retrieved paragraphs per question.")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH, help="Path to a saved BM25 index.")
@@ -101,10 +86,10 @@ def main() -> None:
     args = parse_args()
     if not args.index.exists():
         raise FileNotFoundError(
-            f"Index not found: {args.index}. Run `python scripts/build_index.py --split {args.split} --limit 200` first."
+            f"Index not found: {args.index}. Run `python scripts/build_index.py --dataset {args.dataset} --split {args.split} --limit 200` first."
         )
 
-    examples = load_examples(split=args.split, limit=args.limit)
+    examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
     index = BM25Index.load(args.index)
     pipeline = RAGPipeline(index=index, llm=ChatLLM())
 
@@ -139,7 +124,7 @@ def main() -> None:
     for offset, example in enumerate(tqdm(examples, desc="Evaluating"), start=1):
         question = example["question"]
         gold_answer = example["answer"]
-        golds = gold_titles(example)
+        golds = gold_titles(example, dataset=args.dataset)
 
         if policy is not None:
             answer, ctx_docs = policy_answer(env, policy, question, gold_answer, golds)
@@ -157,7 +142,7 @@ def main() -> None:
 
         # Step 0 diagnostics: did retrieval actually surface the gold
         # supporting paragraphs? Compare gold titles against retrieved titles.
-        retrieved_titles = {_norm_title(t) for t, _id, _s in ctx_view}
+        retrieved_titles = {norm_title(t) for t, _id, _s in ctx_view}
         hit = golds & retrieved_titles
         recall = len(hit) / len(golds) if golds else 0.0
         full_hit = bool(golds) and golds.issubset(retrieved_titles)
@@ -167,7 +152,7 @@ def main() -> None:
             "rejected_unknown" if answer.lower() == "unknown" else "incorrect_answer"
         )
         records.append({
-            "example_id": example.get("id", f"{offset - 1}"),
+            "example_id": example.get("_id") or example.get("id", f"{offset - 1}"),
             "question": question,
             "gold": gold_answer,
             "predict": answer,

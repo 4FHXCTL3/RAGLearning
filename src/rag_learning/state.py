@@ -61,7 +61,7 @@ def _data_uncertainty(doc_vectors: np.ndarray) -> float:
 
     framework describes this as the "variance of inter-document similarity", but
     with only 2 docs there is a single pairwise similarity and its variance is
-    always 0 -- and HotpotQA multi-hop questions have exactly 2 gold docs, so
+    always 0 -- and multi-hop questions typically have exactly 2 gold docs, so
     variance would flatline. We instead use mean pairwise dissimilarity
     (1 - mean cosine): docs all pointing the same way -> ~0 (coherent evidence),
     docs unrelated/conflicting -> larger. This degrades gracefully to the 2-doc

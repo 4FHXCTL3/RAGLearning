@@ -43,7 +43,7 @@ class StepResult:
 
 
 class RAGEnv:
-    """One episode = answering one HotpotQA question with adaptive retrieval.
+    """One episode = answering one multi-hop QA question with adaptive retrieval.
 
     The policy (module 2) observes a 4-dim State and chooses stop/retrieve/reject.
     The env executes the action against the retriever + generator (module 3) and
