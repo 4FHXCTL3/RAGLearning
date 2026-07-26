@@ -114,7 +114,7 @@ def main() -> None:
     if args.results_out is None:
         from rag_learning.config import model_slug
         suffix = "_policy" if args.policy is not None else ""
-        args.results_out = ARTIFACTS_DIR / f"eval_results_{model_slug(pipeline.llm.model)}{suffix}.json"
+        args.results_out = ARTIFACTS_DIR / "eval_results" / f"eval_results_{model_slug(pipeline.llm.model)}{suffix}.json"
 
     em_scores: list[float] = []
     f1_scores: list[float] = []

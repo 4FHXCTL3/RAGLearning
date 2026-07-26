@@ -9,7 +9,7 @@ load_dotenv()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
-DEFAULT_INDEX_PATH = ARTIFACTS_DIR / "bm25_index.pkl"
+DEFAULT_INDEX_PATH = ARTIFACTS_DIR / "indexes" / "bm25_index.pkl"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.siliconflow.cn/v1")

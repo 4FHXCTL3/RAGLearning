@@ -16,7 +16,13 @@
 ├── .env                         # LLM 配置（本地 Ollama / 在线 API）
 ├── README.md
 ├── requirements.txt
-├── artifacts/                   # 保存 BM25 索引等产物
+├── artifacts/                   # 实验结果与产物（索引、策略、评估等）
+│   ├── indexes/                 # 检索索引文件（BM25、Dense）
+│   ├── policies/                # 训练好的策略网络权重
+│   ├── train_logs/              # GRPO 训练日志
+│   ├── eval_results/            # 评估结果 JSON
+│   ├── stats/                   # 统计报告 Markdown
+│   └── figures/                 # 可视化图表
 ├── scripts/
 │   ├── build_index.py           # 构建 HotpotQA BM25 索引
 │   └── run_eval.py              # 运行小规模 RAG 验证
@@ -103,7 +109,7 @@ python scripts/build_index.py --split validation --limit 20
 ```text
 Loaded 20 HotpotQA examples.
 Indexed xxx context paragraphs.
-Saved BM25 index to .../artifacts/bm25_index.pkl.
+Saved BM25 index to .../artifacts/indexes/bm25_index.pkl.
 ```
 
 后续可以扩大规模：

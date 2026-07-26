@@ -22,8 +22,8 @@ ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Plot GRPO training curves.")
-    parser.add_argument("--log", type=Path, default=ARTIFACTS_DIR / "grpo_train_log.json")
-    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "grpo_training_curve.png")
+    parser.add_argument("--log", type=Path, default=ARTIFACTS_DIR / "train_logs" / "grpo_train_log.json")
+    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "figures" / "grpo_training_curve.png")
     parser.add_argument("--window", type=int, default=15, help="Moving-average window.")
     return parser.parse_args()
 

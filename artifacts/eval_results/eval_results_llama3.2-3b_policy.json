@@ -1,0 +1,913 @@
+{
+  "config": {
+    "split": "validation",
+    "limit": 20,
+    "top_k": 10,
+    "model": "llama3.2:3b"
+  },
+  "summary": {
+    "num_examples": 20,
+    "avg_em": 0.05,
+    "avg_f1": 0.08333333333333333,
+    "avg_recall": 0.7,
+    "full_hit_rate": 0.35,
+    "em_given_full_hit": 0.14285714285714285,
+    "f1_given_full_hit": 0.23809523809523808,
+    "em_given_miss": 0.0,
+    "f1_given_miss": 0.0
+  },
+  "results": [
+    {
+      "example_id": "8813f87c0bdd11eba7f7acde48001122",
+      "question": "Who is the mother of the director of film Polish-Russian War (Film)?",
+      "gold": "Małgorzata Braunek",
+      "predict": "Dorota Masłowska",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "polish-russian war (film)",
+        "xawery żuławski"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Polish-Russian War (film)",
+          "score": null,
+          "id": "8813f87c0bdd11eba7f7acde48001122:4"
+        },
+        {
+          "title": "Viktor Yeliseyev",
+          "score": null,
+          "id": "8813f87c0bdd11eba7f7acde48001122:1"
+        },
+        {
+          "title": "Prince Gabriel Constantinovich of Russia",
+          "score": null,
+          "id": "6b55ac320bdb11eba7f7acde48001122:9"
+        },
+        {
+          "title": "Xawery Żuławski",
+          "score": null,
+          "id": "8813f87c0bdd11eba7f7acde48001122:7"
+        },
+        {
+          "title": "The Ballad of Uhlans",
+          "score": null,
+          "id": "d8c36503097411ebbdb0ac1f6bf848b6:4"
+        }
+      ]
+    },
+    {
+      "example_id": "61a46987092f11ebbdaeac1f6bf848b6",
+      "question": "Which film came out first, Blind Shaft or The Mask Of Fu Manchu?",
+      "gold": "The Mask Of Fu Manchu",
+      "predict": "1932",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "blind shaft",
+        "the mask of fu manchu"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "The Mask of Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:2"
+        },
+        {
+          "title": "The Brides of Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:4"
+        },
+        {
+          "title": "The Castle of Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:3"
+        },
+        {
+          "title": "The Mysterious Dr. Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:1"
+        },
+        {
+          "title": "Blind Shaft",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:0"
+        }
+      ]
+    },
+    {
+      "example_id": "e2a3bf2a0bdd11eba7f7acde48001122",
+      "question": "When did John V, Prince Of Anhalt-Zerbst's father die?",
+      "gold": "12 June 1516",
+      "predict": "1504",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "ernest i, prince of anhalt-dessau",
+        "john v, prince of anhalt-zerbst"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "John V, Prince of Anhalt-Zerbst",
+          "score": null,
+          "id": "e2a3bf2a0bdd11eba7f7acde48001122:6"
+        },
+        {
+          "title": "Karl I, Prince of Anhalt-Zerbst",
+          "score": null,
+          "id": "e2a3bf2a0bdd11eba7f7acde48001122:9"
+        },
+        {
+          "title": "Bernhard VII, Prince of Anhalt-Zerbst",
+          "score": null,
+          "id": "e2a3bf2a0bdd11eba7f7acde48001122:1"
+        },
+        {
+          "title": "John VI, Prince of Anhalt-Zerbst",
+          "score": null,
+          "id": "e2a3bf2a0bdd11eba7f7acde48001122:3"
+        },
+        {
+          "title": "Waldemar III, Prince of Anhalt-Zerbst",
+          "score": null,
+          "id": "e2a3bf2a0bdd11eba7f7acde48001122:8"
+        }
+      ]
+    },
+    {
+      "example_id": "0cd3bdea0bde11eba7f7acde48001122",
+      "question": "What is the award that the director of film Wearing Velvet Slippers Under A Golden Umbrella won?",
+      "gold": "Myanmar Motion Picture Academy Awards",
+      "predict": "Shahid Avini Award",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "wearing velvet slippers under a golden umbrella",
+        "wunna"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Wearing Velvet Slippers under a Golden Umbrella",
+          "score": null,
+          "id": "0cd3bdea0bde11eba7f7acde48001122:6"
+        },
+        {
+          "title": "Mohsen Eslamzadeh",
+          "score": null,
+          "id": "4d982dc308c111ebbd8bac1f6bf848b6:9"
+        },
+        {
+          "title": "Etan Boritzer",
+          "score": null,
+          "id": "0f1ac1a00bdb11eba7f7acde48001122:2"
+        },
+        {
+          "title": "Etan Boritzer",
+          "score": null,
+          "id": "dfe93efe0bdd11eba7f7acde48001122:5"
+        },
+        {
+          "title": "Etan Boritzer",
+          "score": null,
+          "id": "0cd3bdea0bde11eba7f7acde48001122:8"
+        }
+      ]
+    },
+    {
+      "example_id": "f9dcb4a60bda11eba7f7acde48001122",
+      "question": "Where was the director of film Ronnie Rocket born?",
+      "gold": "Missoula, Montana",
+      "predict": "no",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "david lynch",
+        "ronnie rocket"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Ronnie Rocket",
+          "score": null,
+          "id": "f9dcb4a60bda11eba7f7acde48001122:7"
+        },
+        {
+          "title": "OTRAG",
+          "score": null,
+          "id": "3f635554096511ebbdafac1f6bf848b6:3"
+        },
+        {
+          "title": "Alexander Korda",
+          "score": null,
+          "id": "7a57c5d2089111ebbd73ac1f6bf848b6:4"
+        },
+        {
+          "title": "Olav Aaraas",
+          "score": null,
+          "id": "f9dcb4a60bda11eba7f7acde48001122:5"
+        },
+        {
+          "title": "Olav Aaraas",
+          "score": null,
+          "id": "0bbded440bda11eba7f7acde48001122:3"
+        }
+      ]
+    },
+    {
+      "example_id": "8981e1ce0bb011ebab90acde48001122",
+      "question": "Who is Charles Bretagne Marie De La Trémoille's paternal grandfather?",
+      "gold": "Charles Armand René de La Trémoille",
+      "predict": "Charles Belgique Hollande de La Trémoille",
+      "em": 0.0,
+      "f1": 0.6666666666666666,
+      "gold_titles": [
+        "charles bretagne marie de la trémoille",
+        "jean bretagne charles de la trémoille"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Charles Bretagne Marie de La Trémoille",
+          "score": null,
+          "id": "8981e1ce0bb011ebab90acde48001122:1"
+        },
+        {
+          "title": "Jean Bretagne Charles de La Trémoille",
+          "score": null,
+          "id": "8981e1ce0bb011ebab90acde48001122:5"
+        },
+        {
+          "title": "Louis Charles de La Trémoille",
+          "score": null,
+          "id": "8981e1ce0bb011ebab90acde48001122:6"
+        },
+        {
+          "title": "Charles Armand René de La Trémoille",
+          "score": null,
+          "id": "8981e1ce0bb011ebab90acde48001122:0"
+        },
+        {
+          "title": "Charlotte de La Trémoille",
+          "score": null,
+          "id": "8981e1ce0bb011ebab90acde48001122:4"
+        }
+      ]
+    },
+    {
+      "example_id": "019bed300bde11eba7f7acde48001122",
+      "question": "Where was the father of Ștefan I. Nenițescu born?",
+      "gold": "Galați",
+      "predict": "Galați",
+      "em": 1.0,
+      "f1": 1.0,
+      "gold_titles": [
+        "ioan s. nenițescu",
+        "ștefan i. nenițescu"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "correct",
+      "retrieved_contexts": [
+        {
+          "title": "Ștefan I. Nenițescu",
+          "score": null,
+          "id": "019bed300bde11eba7f7acde48001122:9"
+        },
+        {
+          "title": "Ioan S. Nenițescu",
+          "score": null,
+          "id": "019bed300bde11eba7f7acde48001122:6"
+        },
+        {
+          "title": "Cleomenes II",
+          "score": null,
+          "id": "71d8e20e0bdb11eba7f7acde48001122:6"
+        },
+        {
+          "title": "Cleomenes II",
+          "score": null,
+          "id": "019bed300bde11eba7f7acde48001122:3"
+        },
+        {
+          "title": "Cleomenes II",
+          "score": null,
+          "id": "6638110e0bdb11eba7f7acde48001122:0"
+        }
+      ]
+    },
+    {
+      "example_id": "a7b9672009c311ebbdb0ac1f6bf848b6",
+      "question": "Are North Marion High School (Oregon) and Seoul High School both located in the same country?",
+      "gold": "no",
+      "predict": "yes",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "north marion high school (oregon)",
+        "seoul high school"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "North Marion High School (Oregon)",
+          "score": null,
+          "id": "a7b9672009c311ebbdb0ac1f6bf848b6:9"
+        },
+        {
+          "title": "North Marion High School (West Virginia)",
+          "score": null,
+          "id": "a7b9672009c311ebbdb0ac1f6bf848b6:2"
+        },
+        {
+          "title": "Seoul High School",
+          "score": null,
+          "id": "a7b9672009c311ebbdb0ac1f6bf848b6:7"
+        },
+        {
+          "title": "East High School (Denver)",
+          "score": null,
+          "id": "a7b9672009c311ebbdb0ac1f6bf848b6:6"
+        },
+        {
+          "title": "Marion High School (Kansas)",
+          "score": null,
+          "id": "a7b9672009c311ebbdb0ac1f6bf848b6:1"
+        }
+      ]
+    },
+    {
+      "example_id": "298f23b8088a11ebbd6eac1f6bf848b6",
+      "question": "Which film has the director who was born later, El Extraño Viaje or Love In Pawn?",
+      "gold": "El Extraño Viaje",
+      "predict": "Love in Pawn",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "charles saunders (director)",
+        "el extraño viaje",
+        "fernando fernán gómez",
+        "love in pawn"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 2,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "El extraño viaje",
+          "score": null,
+          "id": "298f23b8088a11ebbd6eac1f6bf848b6:1"
+        },
+        {
+          "title": "Rafaela Aparicio",
+          "score": null,
+          "id": "298f23b8088a11ebbd6eac1f6bf848b6:5"
+        },
+        {
+          "title": "Love in Pawn",
+          "score": null,
+          "id": "298f23b8088a11ebbd6eac1f6bf848b6:4"
+        },
+        {
+          "title": "El extraño caso de la mujer asesinada",
+          "score": null,
+          "id": "298f23b8088a11ebbd6eac1f6bf848b6:8"
+        },
+        {
+          "title": "Swann in Love (film)",
+          "score": null,
+          "id": "d71f453b085811ebbd5bac1f6bf848b6:7"
+        }
+      ]
+    },
+    {
+      "example_id": "2ec440560bb011ebab90acde48001122",
+      "question": "Who is the maternal grandfather of Antiochus X Eusebes?",
+      "gold": "Ptolemy IX Lathyros",
+      "predict": "Pope Stephen X",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "antiochus x eusebes",
+        "cleopatra iv of egypt"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Laodice of the Sameans",
+          "score": null,
+          "id": "2ec440560bb011ebab90acde48001122:6"
+        },
+        {
+          "title": "Antiochus X Eusebes",
+          "score": null,
+          "id": "2ec440560bb011ebab90acde48001122:3"
+        },
+        {
+          "title": "Henry II, Count of Louvain",
+          "score": null,
+          "id": "deb907f80bdd11eba7f7acde48001122:1"
+        },
+        {
+          "title": "Kaya Alp",
+          "score": null,
+          "id": "2ec440560bb011ebab90acde48001122:1"
+        },
+        {
+          "title": "Kaya Alp",
+          "score": null,
+          "id": "2b4bd5020baf11ebab90acde48001122:8"
+        }
+      ]
+    },
+    {
+      "example_id": "05f8a691087b11ebbd67ac1f6bf848b6",
+      "question": "Which film has the director died first, Crimen A Las Tres or The Working Class Goes To Heaven?",
+      "gold": "The Working Class Goes To Heaven",
+      "predict": "1971",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "crimen a las tres",
+        "elio petri",
+        "luis saslavsky",
+        "the working class goes to heaven"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 3,
+      "recall": 0.75,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "The Working Class Goes to Heaven",
+          "score": null,
+          "id": "05f8a691087b11ebbd67ac1f6bf848b6:5"
+        },
+        {
+          "title": "Crimen a las tres",
+          "score": null,
+          "id": "05f8a691087b11ebbd67ac1f6bf848b6:3"
+        },
+        {
+          "title": "Boy Goes to Heaven",
+          "score": null,
+          "id": "05f8a691087b11ebbd67ac1f6bf848b6:1"
+        },
+        {
+          "title": "Luis Saslavsky",
+          "score": null,
+          "id": "05f8a691087b11ebbd67ac1f6bf848b6:4"
+        },
+        {
+          "title": "Escala en la ciudad",
+          "score": null,
+          "id": "05f8a691087b11ebbd67ac1f6bf848b6:7"
+        }
+      ]
+    },
+    {
+      "example_id": "645c9a5a08c311ebbd8dac1f6bf848b6",
+      "question": "Which film has the director born first, Once A Gentleman or The Girl In White?",
+      "gold": "Once A Gentleman",
+      "predict": "1930",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "james cruze",
+        "john sturges",
+        "once a gentleman",
+        "the girl in white"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 2,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "The Girl in White",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:8"
+        },
+        {
+          "title": "Once a Gentleman",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:0"
+        },
+        {
+          "title": "The Girl in Number 29",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:3"
+        },
+        {
+          "title": "The Girl in the Taxi (1937 film)",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:1"
+        },
+        {
+          "title": "The Girl in the Fog",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:7"
+        }
+      ]
+    },
+    {
+      "example_id": "5bec3cd408a711ebbd7fac1f6bf848b6",
+      "question": "Which film has the director who died earlier, Il Seduttore or The Trial Of Joan Of Arc?",
+      "gold": "The Trial Of Joan Of Arc",
+      "predict": "1954",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "franco rossi (director)",
+        "il seduttore",
+        "robert bresson",
+        "the trial of joan of arc"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 2,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "The Trial of Joan of Arc",
+          "score": null,
+          "id": "5bec3cd408a711ebbd7fac1f6bf848b6:6"
+        },
+        {
+          "title": "Jeannette: The Childhood of Joan of Arc",
+          "score": null,
+          "id": "5bec3cd408a711ebbd7fac1f6bf848b6:1"
+        },
+        {
+          "title": "Daniel Hobbins",
+          "score": null,
+          "id": "5bec3cd408a711ebbd7fac1f6bf848b6:7"
+        },
+        {
+          "title": "Il seduttore",
+          "score": null,
+          "id": "5bec3cd408a711ebbd7fac1f6bf848b6:3"
+        },
+        {
+          "title": "Jean Pasquerel",
+          "score": null,
+          "id": "5bec3cd408a711ebbd7fac1f6bf848b6:2"
+        }
+      ]
+    },
+    {
+      "example_id": "464cfa460bd911eba7f7acde48001122",
+      "question": "Where was the director of film Thomas Jefferson (Film) born?",
+      "gold": "Brooklyn",
+      "predict": "July 4, 1907",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "ken burns",
+        "thomas jefferson (film)"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Thomas Jefferson (film)",
+          "score": null,
+          "id": "464cfa460bd911eba7f7acde48001122:8"
+        },
+        {
+          "title": "Thomas Carr (director)",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:3"
+        },
+        {
+          "title": "The Daltons' Women",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:7"
+        },
+        {
+          "title": "Nathan Juran",
+          "score": null,
+          "id": "b81fbe620bdc11eba7f7acde48001122:5"
+        },
+        {
+          "title": "Richard H. Jefferson",
+          "score": null,
+          "id": "464cfa460bd911eba7f7acde48001122:1"
+        }
+      ]
+    },
+    {
+      "example_id": "c05e16a40bdd11eba7f7acde48001122",
+      "question": "Why did Grand Duke Kirill Vladimirovich Of Russia's wife die?",
+      "gold": "stroke",
+      "predict": "1903",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "grand duke kirill vladimirovich of russia",
+        "princess victoria melita of saxe-coburg and gotha"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Grand Duke Kirill Vladimirovich of Russia",
+          "score": null,
+          "id": "c05e16a40bdd11eba7f7acde48001122:5"
+        },
+        {
+          "title": "Grand Duke Vyacheslav Konstantinovich of Russia",
+          "score": null,
+          "id": "c05e16a40bdd11eba7f7acde48001122:7"
+        },
+        {
+          "title": "Princess Victoria Melita of Saxe-Coburg and Gotha",
+          "score": null,
+          "id": "c05e16a40bdd11eba7f7acde48001122:3"
+        },
+        {
+          "title": "Grand Duke Andrei Vladimirovich of Russia",
+          "score": null,
+          "id": "c05e16a40bdd11eba7f7acde48001122:4"
+        },
+        {
+          "title": "Prince Karl of Leiningen",
+          "score": null,
+          "id": "c05e16a40bdd11eba7f7acde48001122:2"
+        }
+      ]
+    },
+    {
+      "example_id": "2935f1640bda11eba7f7acde48001122",
+      "question": "Where was the place of death of the director of film Beat Girl?",
+      "gold": "Nice",
+      "predict": "London",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "beat girl",
+        "edmond t. gréville"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Beat Girl",
+          "score": null,
+          "id": "2935f1640bda11eba7f7acde48001122:1"
+        },
+        {
+          "title": "The Brides of Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:4"
+        },
+        {
+          "title": "The Blood of Fu Manchu",
+          "score": null,
+          "id": "61a46987092f11ebbdaeac1f6bf848b6:8"
+        },
+        {
+          "title": "Philip V of Spain",
+          "score": null,
+          "id": "bc633e2c0baf11ebab90acde48001122:9"
+        },
+        {
+          "title": "The Girl in the Fog",
+          "score": null,
+          "id": "645c9a5a08c311ebbd8dac1f6bf848b6:7"
+        }
+      ]
+    },
+    {
+      "example_id": "ada1b358085211ebbd58ac1f6bf848b6",
+      "question": "Who died first, Fleetwood Sheppard or George William Whitaker?",
+      "gold": "Fleetwood Sheppard",
+      "predict": "March 6, 1916",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "fleetwood sheppard",
+        "george william whitaker"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 2,
+      "recall": 1.0,
+      "full_hit": true,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "George William Whitaker",
+          "score": null,
+          "id": "ada1b358085211ebbd58ac1f6bf848b6:0"
+        },
+        {
+          "title": "Nicholas Sheppard",
+          "score": null,
+          "id": "ada1b358085211ebbd58ac1f6bf848b6:2"
+        },
+        {
+          "title": "Fleetwood Sheppard",
+          "score": null,
+          "id": "ada1b358085211ebbd58ac1f6bf848b6:1"
+        },
+        {
+          "title": "Billy Whitaker",
+          "score": null,
+          "id": "ada1b358085211ebbd58ac1f6bf848b6:6"
+        },
+        {
+          "title": "William Whitaker (1629–1672)",
+          "score": null,
+          "id": "ada1b358085211ebbd58ac1f6bf848b6:4"
+        }
+      ]
+    },
+    {
+      "example_id": "3f857208086c11ebbd61ac1f6bf848b6",
+      "question": "Which film has the director born first, The Raven'S Dance or Keïta! L'Héritage Du Griot?",
+      "gold": "The Raven'S Dance",
+      "predict": "1980",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "dani kouyaté",
+        "keïta! l'héritage du griot",
+        "markku lehmuskallio",
+        "the raven's dance"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 3,
+      "recall": 0.75,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Keïta! l'Héritage du griot",
+          "score": null,
+          "id": "3f857208086c11ebbd61ac1f6bf848b6:8"
+        },
+        {
+          "title": "Seydou Boro",
+          "score": null,
+          "id": "3f857208086c11ebbd61ac1f6bf848b6:9"
+        },
+        {
+          "title": "The Raven's Dance",
+          "score": null,
+          "id": "3f857208086c11ebbd61ac1f6bf848b6:2"
+        },
+        {
+          "title": "Markku Lehmuskallio",
+          "score": null,
+          "id": "3f857208086c11ebbd61ac1f6bf848b6:1"
+        },
+        {
+          "title": "When the Raven Flies",
+          "score": null,
+          "id": "3f857208086c11ebbd61ac1f6bf848b6:4"
+        }
+      ]
+    },
+    {
+      "example_id": "dfe93efe0bdd11eba7f7acde48001122",
+      "question": "When did Jean Martin (Singer)'s husband die?",
+      "gold": "1983",
+      "predict": "no",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "jean martin (singer)",
+        "william black (businessman)"
+      ],
+      "num_gold": 2,
+      "num_gold_retrieved": 1,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Jean Martin (singer)",
+          "score": null,
+          "id": "dfe93efe0bdd11eba7f7acde48001122:9"
+        },
+        {
+          "title": "Carla Martin",
+          "score": null,
+          "id": "dfe93efe0bdd11eba7f7acde48001122:2"
+        },
+        {
+          "title": "O Valencia!",
+          "score": null,
+          "id": "0f1ac1a00bdb11eba7f7acde48001122:0"
+        },
+        {
+          "title": "O Valencia!",
+          "score": null,
+          "id": "3cbd107e0bde11eba7f7acde48001122:3"
+        },
+        {
+          "title": "O Valencia!",
+          "score": null,
+          "id": "29427eea0bdd11eba7f7acde48001122:3"
+        }
+      ]
+    },
+    {
+      "example_id": "1d890623088711ebbd6dac1f6bf848b6",
+      "question": "Which film has the director who died earlier, Tangled Destinies or The Daltons' Women?",
+      "gold": "Tangled Destinies",
+      "predict": "yes",
+      "em": 0.0,
+      "f1": 0.0,
+      "gold_titles": [
+        "frank r. strayer",
+        "tangled destinies",
+        "the daltons' women",
+        "thomas carr (director)"
+      ],
+      "num_gold": 4,
+      "num_gold_retrieved": 2,
+      "recall": 0.5,
+      "full_hit": false,
+      "category": "incorrect_answer",
+      "retrieved_contexts": [
+        {
+          "title": "Tangled Destinies",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:1"
+        },
+        {
+          "title": "The Daltons' Women",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:7"
+        },
+        {
+          "title": "When the Daltons Rode",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:6"
+        },
+        {
+          "title": "Jesse James vs. the Daltons",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:8"
+        },
+        {
+          "title": "The Daltons Ride Again",
+          "score": null,
+          "id": "1d890623088711ebbd6dac1f6bf848b6:5"
+        }
+      ]
+    }
+  ]
+}

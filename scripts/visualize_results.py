@@ -56,7 +56,7 @@ def main() -> None:
 
     # Default input: the results file for the model currently set in .env.
     if args.results is None:
-        args.results = ARTIFACTS_DIR / f"eval_results_{model_slug()}.json"
+        args.results = ARTIFACTS_DIR / "eval_results" / f"eval_results_{model_slug()}.json"
 
     if not args.results.exists():
         raise FileNotFoundError(
@@ -95,9 +95,9 @@ def main() -> None:
     # models produce distinct artifacts instead of overwriting each other.
     slug = model_slug(model)
     if args.hist_out is None:
-        args.hist_out = ARTIFACTS_DIR / f"results_hist_{slug}.png"
+        args.hist_out = ARTIFACTS_DIR / "figures" / f"results_hist_{slug}.png"
     if args.stats_out is None:
-        args.stats_out = ARTIFACTS_DIR / f"result_stats_{slug}.md"
+        args.stats_out = ARTIFACTS_DIR / "stats" / f"result_stats_{slug}.md"
 
     avg_em = summary.get("avg_em", sum(em_scores) / len(em_scores))
     avg_f1 = summary.get("avg_f1", sum(f1_scores) / len(f1_scores))

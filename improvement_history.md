@@ -106,9 +106,9 @@ python scripts/visualize_results.py --split validation --limit 50 --top-k 10 --c
 
 输出：
 
-- `artifacts/eval_results.json` → 详细结果
-- `artifacts/result_stats.md` → 统计表格
-- `artifacts/results_hist.png` → EM/F1 分布直方图
+- `artifacts/eval_results/eval_results_<model>.json` → 详细结果
+- `artifacts/stats/result_stats_<model>.md` → 统计表格
+- `artifacts/figures/results_hist_<model>.png` → EM/F1 分布直方图
 
 ---
 
@@ -139,12 +139,12 @@ python scripts/visualize_results.py --split validation --limit 50 --top-k 10 --c
 
 ## 背景：为什么 baseline 只有 F1=0.2775
 
-固化的 baseline（`artifacts/baseline_metrics.json`）：
+固化的 baseline（`artifacts/eval_results/baseline_metrics.json`）：
 
 - 模型：`THUDM/GLM-Z1-9B-0414`（**推理型模型**，会输出 `<think>` 思维链）
 - val 50 题：EM **0.02** / F1 **0.2775**
 
-排查 `artifacts/baseline_eval.json` 里的原始预测，发现分数低**不是检索或模型能力问题**，而是 `src/rag_learning/rag.py` 被回退成了极简版本：
+排查 `artifacts/eval_results/baseline_eval.json` 里的原始预测，发现分数低**不是检索或模型能力问题**，而是 `src/rag_learning/rag.py` 被回退成了极简版本：
 
 - system prompt 退化为 `"Answer the question based on the given context. Keep the answer short."`
 - **完全没有输出后处理**
@@ -185,7 +185,7 @@ HotpotQA 是 **exact-span EM/F1** 评测，这些脚手架文本会严重稀释 
 
 ## 效果（离线验证，零 API 成本）
 
-在**已采集的** baseline 原始预测（`artifacts/baseline_eval.json`，val 50 题）上直接套用 `clean_answer()`：
+在**已采集的** baseline 原始预测（`artifacts/eval_results/baseline_eval.json`，val 50 题）上直接套用 `clean_answer()`：
 
 | 配置 | EM | F1 |
 |------|----|----|
@@ -207,7 +207,7 @@ HotpotQA 是 **exact-span EM/F1** 评测，这些脚手架文本会严重稀释 
 
 ```bash
 python scripts/run_eval.py --split validation --limit 50 --top-k 5 --policy none \
-  --results-out artifacts/step_clean_eval.json
+  --results-out artifacts/eval_results/step_clean_eval.json
 ```
 
 对照基准：baseline F1 = 0.2775（EM 0.02）。

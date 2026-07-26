@@ -29,7 +29,7 @@ St=[Hsem,Ua,Ue,ΔI]
 ---
 模块3：环境与奖励优化 (Environment & Reward Optimization)
 - 执行者 (Generator):
-  - 调用 SiliconFlow API (Qwen2.5-7B)。
+  - 调用 LLM
   - 根据动作执行：如果是 Retrieve，则增加检索数量；如果是 Stop，则生成最终答案。
   
 - 奖励计算 (Composite Reward Function):

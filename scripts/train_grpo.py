@@ -34,8 +34,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=0.05)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH)
-    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "policy.npz")
-    parser.add_argument("--log-out", type=Path, default=ARTIFACTS_DIR / "grpo_train_log.json")
+    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "policies" / "policy.npz")
+    parser.add_argument("--log-out", type=Path, default=ARTIFACTS_DIR / "train_logs" / "grpo_train_log.json")
     return parser.parse_args()
 
 
