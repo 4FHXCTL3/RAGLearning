@@ -1,0 +1,16 @@
+{
+  "progress": {
+    "current_epoch": 0,
+    "current_question_idx": 700,
+    "completed_epochs": 0
+  },
+  "metrics": {
+    "epoch_returns": [],
+    "epoch_objectives": [],
+    "action_counts": {
+      "stop": 2019,
+      "retrieve": 37,
+      "reject": 44
+    }
+  }
+}

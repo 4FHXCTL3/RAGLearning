@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-"""Visualize GRPO training dynamics logged by scripts/train_grpo.py.
+"""Visualize GRPO training dynamics logged by scripts/train_policy.py.
 
-Reads artifacts/grpo_train_log.json (the "steps" array) and plots:
+Reads the training log JSON and plots:
   1. Per-step group return with a moving average (learning curve).
   2. Clipped-objective per step.
   3. First-action distribution (stop/retrieve/reject) over training.
 
 Usage:
-    python scripts/train_grpo.py ...
-    python scripts/visualize_training.py
+    python scripts/train_policy.py --dataset hotpotqa --limit 200 --epochs 2
+    python scripts/visualize_training.py --dataset hotpotqa --model llama3.2:3b
 """
 from __future__ import annotations
 
@@ -20,10 +20,26 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 
+def _default_log_path(dataset: str, model: str | None) -> Path:
+    """Auto-derive the log path from dataset and model, matching train_policy.py."""
+    if model is None:
+        from rag_learning.config import LLM_MODEL
+        model = LLM_MODEL
+    from rag_learning.config import model_slug
+    slug = model_slug(model)
+    return ARTIFACTS_DIR / "train_logs" / f"{dataset}_{slug}_train_log.json"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Plot GRPO training curves.")
-    parser.add_argument("--log", type=Path, default=ARTIFACTS_DIR / "train_logs" / "grpo_train_log.json")
-    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "figures" / "grpo_training_curve.png")
+    parser.add_argument("--dataset", default="hotpotqa",
+                        help="Dataset name (hotpotqa, 2wikimultihopqa, musique).")
+    parser.add_argument("--model", default=None,
+                        help="LLM model name. Auto-detected from .env if not set.")
+    parser.add_argument("--log", type=Path, default=None,
+                        help="Training log JSON path. Auto-derived if not set.")
+    parser.add_argument("--out", type=Path, default=ARTIFACTS_DIR / "figures" / "grpo_training_curve.png",
+                        help="Output image path.")
     parser.add_argument("--window", type=int, default=15, help="Moving-average window.")
     return parser.parse_args()
 
@@ -46,6 +62,11 @@ def moving_average(values, window):
 
 def main() -> None:
     args = parse_args()
+    if args.log is None:
+        args.log = _default_log_path(args.dataset, args.model)
+    if args.out == ARTIFACTS_DIR / "figures" / "grpo_training_curve.png":
+        args.out = ARTIFACTS_DIR / "figures" / f"grpo_training_{args.dataset}.png"
+
     if not args.log.exists():
         raise FileNotFoundError(f"Training log not found: {args.log}. Run train_grpo.py first.")
 

@@ -5,6 +5,8 @@ import html
 from dataclasses import dataclass
 from typing import Iterable
 
+from rag_learning.config import HF_CACHE_DIR
+
 
 # 2WikiMultihopQA parquet file URLs (one per split).
 _TWO_WIKI_URLS = {
@@ -12,6 +14,9 @@ _TWO_WIKI_URLS = {
     "validation": "https://huggingface.co/datasets/xanhho/2WikiMultihopQA/resolve/main/dev.parquet",
     "test": "https://huggingface.co/datasets/xanhho/2WikiMultihopQA/resolve/main/test.parquet",
 }
+
+# MuSiQue config name (HuggingFace dataset `musique/musique`).
+_MUSIQUE_CONFIG = "v2.0.1"
 
 
 @dataclass(frozen=True)
@@ -41,6 +46,14 @@ def gold_titles(example, dataset: str = "hotpotqa") -> set[str]:
         sf = ast.literal_eval(sf_raw) if isinstance(sf_raw, str) else sf_raw
         # sf is a list of [title, sentence_id] pairs
         return {norm_title(item[0]) for item in sf}
+    if dataset == "musique":
+        paragraphs = example.get("paragraphs", [])
+        answer_paras = example.get("answer_paragraphs", [])
+        titles = set()
+        for idx in answer_paras:
+            if idx < len(paragraphs):
+                titles.add(norm_title(paragraphs[idx].get("title", "")))
+        return titles
     # Default: HotpotQA
     sf = example.get("supporting_facts") or {}
     titles = sf.get("title", []) if isinstance(sf, dict) else []
@@ -75,12 +88,59 @@ def load_examples(
                 f"Unknown split '{split}' for 2WikiMultihopQA. "
                 f"Available: {list(_TWO_WIKI_URLS)}"
             )
-        ds = load_dataset("parquet", data_files=url, split="train")
-    else:
-        ds = load_dataset("hotpotqa/hotpot_qa", "distractor", split=split)
+        # Download the parquet file to local cache once, then read only the
+        # row groups needed — avoids loading the full ~545 MB training set.
+        import pyarrow.parquet as pq
+        import pyarrow as pa
+        import requests
+        from datasets import Dataset
+        from pathlib import Path
 
-    if limit is not None:
-        ds = ds.select(range(min(limit, len(ds))))
+        cache_dir = Path(HF_CACHE_DIR) / "2wikimultihopqa"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        local_path = cache_dir / f"{split}.parquet"
+
+        if not local_path.exists():
+            print(f"Downloading {split}.parquet ...")
+            resp = requests.get(url, stream=True, timeout=300)
+            resp.raise_for_status()
+            total = int(resp.headers.get("content-length", 0))
+            with open(local_path, "wb") as f:
+                if total:
+                    from tqdm import tqdm
+                    with tqdm(total=total, unit="B", unit_scale=True,
+                              desc="Downloading") as pbar:
+                        for chunk in resp.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                            pbar.update(len(chunk))
+                else:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            print("Download complete.")
+
+        # Read only enough row groups to cover `limit` rows.
+        # Use iter_batches to avoid loading the entire single-row-group file
+        # (~545 MB) into memory at once.
+        pf = pq.ParquetFile(str(local_path))
+        needed = limit if limit is not None else pf.metadata.num_rows
+        rows_read = 0
+        batches = []
+        for batch in pf.iter_batches(batch_size=65536):
+            rows_read += batch.num_rows
+            batches.append(batch)
+            if rows_read >= needed:
+                break
+        table = pa.Table.from_batches(batches)
+        if limit is not None and rows_read > limit:
+            table = table.slice(0, limit)
+        ds = Dataset.from_list(table.to_pylist())
+    elif dataset == "musique":
+        split_str = f"{split}[:{limit}]" if limit else split
+        ds = load_dataset("musique/musique", _MUSIQUE_CONFIG, split=split_str, cache_dir=HF_CACHE_DIR)
+    else:
+        split_str = f"{split}[:{limit}]" if limit else split
+        ds = load_dataset("hotpotqa/hotpot_qa", "distractor", split=split_str, cache_dir=HF_CACHE_DIR)
+
     return ds
 
 
@@ -100,6 +160,21 @@ def iter_context_paragraphs(examples, dataset: str = "hotpotqa") -> Iterable[Doc
                 )
                 text = html.unescape(text)
                 title = html.unescape(title)
+                if not text:
+                    continue
+                yield Document(
+                    id=f"{example_id}:{paragraph_id}",
+                    title=title,
+                    text=text,
+                    example_id=example_id,
+                    paragraph_id=paragraph_id,
+                )
+        elif dataset == "musique":
+            example_id = str(example.get("id") or example_index)
+            paragraphs = example.get("paragraphs", [])
+            for paragraph_id, para in enumerate(paragraphs):
+                title = html.unescape(para.get("title", ""))
+                text = html.unescape(para.get("paragraph_text", ""))
                 if not text:
                     continue
                 yield Document(

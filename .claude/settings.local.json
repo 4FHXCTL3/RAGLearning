@@ -7,7 +7,9 @@
       "Bash(python scripts/run_eval.py --split validation --limit 50 --top-k 5 --policy rule --results-out artifacts/rule_eval.json)",
       "Bash(echo \"RULE DONE exit=$?\")",
       "Bash(sed 's/\\\\\\(KEY=\\\\\\).*/\\\\1***/')",
-      "WebSearch"
+      "WebSearch",
+      "Bash(python -c \"import scripts.train_policy; print\\('Import OK'\\)\")",
+      "Bash(PYTHONPATH=src python -c ' *)"
     ]
   }
 }

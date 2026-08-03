@@ -7,7 +7,12 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from rag_learning.config import DEFAULT_INDEX_PATH
+from rag_learning.config import ARTIFACTS_DIR
+
+
+def _index_path(dataset: str, split: str) -> Path:
+    """Return the BM25 index path for a given dataset and split."""
+    return ARTIFACTS_DIR / "indexes" / f"bm25_index_{dataset}_{split}.pkl"
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset", default="hotpotqa", help="Dataset: hotpotqa or 2wikimultihopqa.")
     parser.add_argument("--split", default="validation", help="Dataset split, e.g. train or validation.")
     parser.add_argument("--limit", type=int, default=200, help="Number of examples to index for quick experiments.")
-    parser.add_argument("--output", type=Path, default=DEFAULT_INDEX_PATH, help="Output index path.")
+    parser.add_argument("--output", type=Path, default=None, help="Output index path. Auto-detected from dataset/split if not set.")
     return parser.parse_args()
 
 
@@ -24,6 +29,9 @@ def main() -> None:
     from rag_learning.index import BM25Index
 
     args = parse_args()
+    if args.output is None:
+        args.output = _index_path(args.dataset, args.split)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
     documents = list(iter_context_paragraphs(examples, dataset=args.dataset))
     index = BM25Index(documents)

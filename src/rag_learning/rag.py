@@ -126,6 +126,21 @@ Question: {question}
 Answer:"""
 
 
+DIRECT_PROMPT = """Answer the following question concisely and accurately using only your own knowledge.
+
+Question: {question}
+
+Answer:"""
+
+
+def direct_answer(llm: ChatLLM, question: str) -> str:
+    """Answer a question directly without any retrieval context (Wo-RAG baseline)."""
+    prompt = DIRECT_PROMPT.format(question=question)
+    answer = llm.generate(prompt).strip()
+    answer = clean_answer(answer)
+    return answer
+
+
 class RAGPipeline:
     def __init__(self, index: BM25Index, llm: ChatLLM):
         self.index = index
