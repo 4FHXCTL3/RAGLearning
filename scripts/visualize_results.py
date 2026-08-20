@@ -32,36 +32,74 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Path to the JSON results written by run_eval.py (--results-out). "
-        "Defaults to artifacts/eval_results_<current-model>.json.",
+        "If not set, the newest eval_results_*.json in artifacts/eval_results/ "
+        "is used (or --dataset + the .env model if given).",
+    )
+    parser.add_argument(
+        "--dataset",
+        default=None,
+        help="Dataset to visualize (triviaqa, popqa, nqswap, hotpotqa, ...). "
+        "Used to pick the matching results file when --results is not set.",
     )
     parser.add_argument(
         "--hist-out",
         type=Path,
         default=None,
-        help="Histogram output path. Defaults to artifacts/results_hist_<model>.png.",
+        help="Histogram output path. Defaults to artifacts/results_hist_<dataset>_<model>.png.",
     )
     parser.add_argument(
         "--stats-out",
         type=Path,
         default=None,
-        help="Stats markdown output. Defaults to artifacts/result_stats_<model>.md.",
+        help="Stats markdown output. Defaults to artifacts/result_stats_<dataset>_<model>.md.",
     )
     return parser.parse_args()
+
+
+def _pick_results_file(args: argparse.Namespace) -> tuple[Path, str]:
+    """Resolve the results file to visualize and the dataset it belongs to.
+
+    Priority: explicit --results; else --dataset + .env model; else the newest
+    eval_results_*.json (dataset is parsed from the filename).
+    """
+    from rag_learning.config import model_slug
+
+    if args.results is not None:
+        return args.results, args.dataset or ""
+
+    if args.dataset is not None:
+        path = ARTIFACTS_DIR / "eval_results" / \
+            f"eval_results_{args.dataset}_{model_slug()}.json"
+        return path, args.dataset
+
+    # Newest file wins; parse the dataset out of e.g.
+    # eval_results_triviaqa_llama3-8b.json -> triviaqa
+    candidates = sorted(
+        ARTIFACTS_DIR.glob("eval_results/eval_results_*.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    if not candidates:
+        raise FileNotFoundError(
+            "No eval_results_*.json found in artifacts/eval_results/. "
+            "Run `python scripts/run_eval.py --dataset <ds> ...` first."
+        )
+    path = candidates[0]
+    dataset = path.stem.replace("eval_results_", "").split("_")[0]
+    print(f"Auto-detected newest results file: {path}")
+    return path, dataset
 
 
 def main() -> None:
     from rag_learning.config import model_slug
 
     args = parse_args()
-
-    # Default input: the results file for the model currently set in .env.
-    if args.results is None:
-        args.results = ARTIFACTS_DIR / "eval_results" / f"eval_results_{model_slug()}.json"
+    args.results, dataset = _pick_results_file(args)
 
     if not args.results.exists():
         raise FileNotFoundError(
             f"Results file not found: {args.results}. "
-            f"Run `python scripts/run_eval.py --split validation --limit 50 --top-k 5` first."
+            f"Run `python scripts/run_eval.py --dataset <ds> ...` first."
         )
 
     with args.results.open("r", encoding="utf-8") as file:
@@ -90,14 +128,18 @@ def main() -> None:
     f1_scores = [r["f1"] for r in results]
 
     model = config.get("model", "unknown")
+    if not dataset:
+        dataset = config.get("dataset", "")
 
-    # Name outputs after the model recorded in the results file, so different
-    # models produce distinct artifacts instead of overwriting each other.
+    # Name outputs after the dataset + model recorded in the results file, so
+    # different (dataset, model) runs produce distinct artifacts instead of
+    # overwriting each other.
     slug = model_slug(model)
+    prefix = f"{dataset}_" if dataset else ""
     if args.hist_out is None:
-        args.hist_out = ARTIFACTS_DIR / "figures" / f"results_hist_{slug}.png"
+        args.hist_out = ARTIFACTS_DIR / "figures" / f"results_hist_{prefix}{slug}.png"
     if args.stats_out is None:
-        args.stats_out = ARTIFACTS_DIR / "stats" / f"result_stats_{slug}.md"
+        args.stats_out = ARTIFACTS_DIR / "stats" / f"result_stats_{prefix}{slug}.md"
 
     avg_em = summary.get("avg_em", sum(em_scores) / len(em_scores))
     avg_f1 = summary.get("avg_f1", sum(f1_scores) / len(f1_scores))
@@ -112,6 +154,7 @@ def main() -> None:
     print("Evaluation Summary (from run_eval.py results):")
     print(f"  Results file: {args.results}")
     print(f"  Model:        {model}")
+    print(f"  Dataset:      {dataset or config.get('dataset')}")
     print(f"  Split/limit/top_k: {config.get('split')}/{config.get('limit')}/{config.get('top_k')}")
     print(f"  Total examples: {total}")
     print(f"  Average EM: {avg_em:.3f} ({avg_em * 100:.1f}%)")
@@ -129,6 +172,7 @@ def main() -> None:
         f.write("# Evaluation Results\n\n")
         f.write(f"**测试模型 (LLM): `{model}`**\n\n")
         f.write(f"- Model: `{model}`\n")
+        f.write(f"- Dataset: `{dataset or config.get('dataset')}`\n")
         f.write(f"- Dataset split: `{config.get('split')}`\n")
         f.write(f"- Number of examples: {config.get('limit', total)}\n")
         f.write(f"- Top-k retrieval: {config.get('top_k')}\n\n")
@@ -187,6 +231,7 @@ def main() -> None:
         fontsize=12,
     )
     plt.tight_layout(rect=(0, 0, 1, 0.95))
+    args.hist_out.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(args.hist_out, dpi=150, bbox_inches="tight")
     print(f"Saved histogram to {args.hist_out}")
     plt.close()

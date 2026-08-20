@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from rag_learning.evaluate import exact_match_score, f1_score
+from rag_learning.evaluate import compute_em_f1
 from rag_learning.index import BM25Index
 from rag_learning.llm import ChatLLM
 from rag_learning.rag import SYSTEM_PROMPT, build_prompt, clean_answer
@@ -22,14 +22,19 @@ ACTION_NAMES = {ACTION_STOP: "stop", ACTION_RETRIEVE: "retrieve", ACTION_REJECT:
 class RewardWeights:
     """Fixed weights for the composite reward (framework module 3).
 
-    R = alpha*Racc - beta*Rcost + gamma*Rhonesty + lambda*delta_I
-    Starting values; tune later (Phase E).
+    R = alpha*Racc - beta*Rcost + gamma*Rhonesty + lambda*delta_I + rho*Rretrieval
+
+    Tuned for weak base models (llama3.2:3b) on multi-hop QA:
+    - Use F1 (not EM threshold) for fine-grained accuracy signal
+    - Add retrieval bonus when gold supporting docs are present
+    - Lower beta/gamma to reduce action-collapse into rejection
     """
 
-    alpha: float = 1.0   # accuracy (EM/F1) weight
-    beta: float = 0.1    # per-retrieval cost penalty
-    gamma: float = 0.5   # honest-rejection reward
-    lam: float = 0.2     # information-gain shaping
+    alpha: float = 1.0      # accuracy (F1) weight
+    beta: float = 0.05      # per-retrieval cost penalty (reduced from 0.1)
+    gamma: float = 0.3      # honest-rejection reward (reduced from 0.5)
+    lam: float = 0.3        # information-gain shaping (increased from 0.2)
+    rho: float = 0.2        # retrieval relevance bonus (new)
 
 
 @dataclass
@@ -75,7 +80,7 @@ class RAGEnv:
 
         # per-episode mutable state
         self.question: str = ""
-        self.gold_answer: str = ""
+        self.gold_answers: list[str] = []
         self.gold_titles: set[str] = set()
         self.current_k: int = initial_k
         self.retrieval_count: int = 0
@@ -114,9 +119,9 @@ class RAGEnv:
 
     # --- gym-like API ----------------------------------------------------
 
-    def reset(self, question: str, gold_answer: str, gold_titles: set[str] | None = None) -> State:
+    def reset(self, question: str, gold_answers: list[str], gold_titles: set[str] | None = None) -> State:
         self.question = question
-        self.gold_answer = gold_answer
+        self.gold_answers = gold_answers
         self.gold_titles = gold_titles or set()
         self.current_k = self.initial_k
         self.retrieval_count = 1
@@ -156,13 +161,15 @@ class RAGEnv:
 
         if action == ACTION_STOP:
             answer = self._greedy_answer()
-            em = exact_match_score(answer, self.gold_answer)
-            f1 = f1_score(answer, self.gold_answer)
-            racc = max(em, f1)  # reward the better of the two
-            reward = w.alpha * racc - w.beta * self.retrieval_count + w.lam * delta_i
+            em, f1 = compute_em_f1(answer, self.gold_answers)
+            # Use F1 (more fine-grained than EM) for accuracy reward.
+            racc = f1
+            # Retrieval relevance bonus: reward having the gold docs in context.
+            r_retrieval = w.rho if self._gold_is_retrievable() else 0.0
+            reward = w.alpha * racc - w.beta * self.retrieval_count + w.lam * delta_i + r_retrieval
             state = self._last_state or self._observe(self.contexts)
             return StepResult(action, reward, True, answer, state,
-                              {"em": em, "f1": f1, "racc": racc})
+                              {"em": em, "f1": f1, "racc": racc, "r_retrieval": r_retrieval})
 
         if action == ACTION_REJECT:
             honest = not self._gold_is_retrievable()
@@ -185,9 +192,10 @@ class RAGEnv:
         self.retrieval_count += 1
         new_docs = self._retrieve(self.current_k)
         state = self._observe(new_docs)
-        # Info gain: novelty comes from the fresh state's delta_i.
-        reward = -w.beta * self.retrieval_count + w.lam * state.delta_i
+        # Retrieval relevance bonus: immediate feedback for finding gold docs.
+        r_retrieval = w.rho if self._gold_is_retrievable() else 0.0
+        reward = -w.beta * self.retrieval_count + w.lam * state.delta_i + r_retrieval
         self.contexts = new_docs
         self.prev_doc_texts = self._doc_texts(new_docs)
         self._last_state = state
-        return StepResult(action, reward, False, None, state, {"k": self.current_k})
+        return StepResult(action, reward, False, None, state, {"k": self.current_k, "r_retrieval": r_retrieval})

@@ -1,8 +1,0 @@
-{
-  "model": "THUDM/GLM-Z1-9B-0414",
-  "split": "validation",
-  "limit": 50,
-  "top_k": 5,
-  "avg_em": 0.02,
-  "avg_f1": 0.27745335553959494
-}

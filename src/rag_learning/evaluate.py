@@ -39,3 +39,17 @@ def f1_score(prediction: str, ground_truth: str) -> float:
     precision = num_same / len(prediction_tokens)
     recall = num_same / len(ground_truth_tokens)
     return 2 * precision * recall / (precision + recall)
+
+
+def compute_em_f1(prediction: str, golds: list[str]) -> tuple[float, float]:
+    """Max-over-golds EM and F1 (standard for NQ/PopQA/TriviaQA).
+
+    These datasets accept multiple gold answers / aliases; a prediction is
+    scored against the gold it matches best.
+    """
+    if not golds:
+        return 0.0, 0.0
+    return (
+        max(exact_match_score(prediction, g) for g in golds),
+        max(f1_score(prediction, g) for g in golds),
+    )

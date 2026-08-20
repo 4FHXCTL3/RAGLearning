@@ -19,13 +19,19 @@ except (AttributeError, ValueError):
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from rag_learning.config import DEFAULT_INDEX_PATH
-from rag_learning.data import gold_titles, norm_title
+from rag_learning.data import (
+    SUPPORTED_DATASETS,
+    corpus_spec,
+    default_index_path,
+    example_answers,
+    gold_titles,
+    norm_title,
+)
 
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 
-def policy_answer(env, policy, question, gold_answer, golds, max_steps=6):
+def policy_answer(env, policy, question, gold_answers, golds, max_steps=6):
     """Run one policy-driven episode (framework module 2 inference).
 
     The policy picks stop/retrieve/reject from the observed state until the
@@ -34,7 +40,7 @@ def policy_answer(env, policy, question, gold_answer, golds, max_steps=6):
     """
     import numpy as np
 
-    state = env.reset(question, gold_answer, golds)
+    state = env.reset(question, gold_answers, golds)
     step = None
     for _ in range(max_steps):
         action = int(np.argmax(policy.action_probs(state.to_vector())))
@@ -47,12 +53,19 @@ def policy_answer(env, policy, question, gold_answer, golds, max_steps=6):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a small multi-hop QA RAG evaluation.")
-    parser.add_argument("--dataset", default="hotpotqa", help="Dataset: hotpotqa or 2wikimultihopqa.")
+    parser = argparse.ArgumentParser(description="Run a small QA RAG evaluation.")
+    parser.add_argument("--dataset", default="hotpotqa", choices=SUPPORTED_DATASETS,
+                        help="Dataset to evaluate.")
     parser.add_argument("--split", default="validation", help="Dataset split, e.g. train or validation.")
+    parser.add_argument("--model", default=None,
+                        help="Ollama model name to generate with. Defaults to "
+                             "LLM_MODEL from .env (e.g. --model llama3:8b).")
     parser.add_argument("--limit", type=int, default=5, help="Number of examples to evaluate.")
     parser.add_argument("--top-k", type=int, default=10, help="Number of retrieved paragraphs per question.")
-    parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH, help="Path to a saved BM25 index.")
+    parser.add_argument("--index", type=Path, default=None,
+                        help="Path to a saved BM25 index. Auto-resolved from the "
+                             "dataset's retrieval corpus if not set (e.g. PopQA -> "
+                             "the Simple English Wikipedia index).")
     parser.add_argument(
         "--policy",
         type=Path,
@@ -78,20 +91,25 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     from rag_learning.data import load_examples
-    from rag_learning.evaluate import exact_match_score, f1_score
+    from rag_learning.evaluate import compute_em_f1
     from rag_learning.index import BM25Index
     from rag_learning.llm import ChatLLM
     from rag_learning.rag import RAGPipeline
 
     args = parse_args()
+    corpus_ds, corpus_split = corpus_spec(args.dataset, args.split)
+    if args.index is None:
+        args.index = default_index_path(args.dataset, args.split)
     if not args.index.exists():
         raise FileNotFoundError(
-            f"Index not found: {args.index}. Run `python scripts/build_index.py --dataset {args.dataset} --split {args.split} --limit 200` first."
+            f"Index not found: {args.index}. Build it first with "
+            f"`python scripts/build_index.py --dataset {corpus_ds} "
+            f"--split {corpus_split} --limit 200`."
         )
 
     examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
     index = BM25Index.load(args.index)
-    pipeline = RAGPipeline(index=index, llm=ChatLLM())
+    pipeline = RAGPipeline(index=index, llm=ChatLLM(model=args.model))
 
     # Optional: adaptive policy-driven inference (framework module 2).
     policy = None
@@ -109,12 +127,13 @@ def main() -> None:
         )
         print(f"Policy inference enabled: {args.policy}")
 
-    # Name the results file after the model so different LLM runs don't
-    # overwrite each other (e.g. eval_results_llama3.2-3b.json).
+    # Name the results file after dataset + model so different dataset/model
+    # runs don't overwrite each other (e.g. eval_results_triviaqa_llama3-8b.json).
     if args.results_out is None:
         from rag_learning.config import model_slug
         suffix = "_policy" if args.policy is not None else ""
-        args.results_out = ARTIFACTS_DIR / "eval_results" / f"eval_results_{model_slug(pipeline.llm.model)}{suffix}.json"
+        args.results_out = ARTIFACTS_DIR / "eval_results" / \
+            f"eval_results_{args.dataset}_{model_slug(pipeline.llm.model)}{suffix}.json"
 
     em_scores: list[float] = []
     f1_scores: list[float] = []
@@ -123,11 +142,11 @@ def main() -> None:
 
     for offset, example in enumerate(tqdm(examples, desc="Evaluating"), start=1):
         question = example["question"]
-        gold_answer = example["answer"]
+        gold_list = example_answers(example, dataset=args.dataset)
         golds = gold_titles(example, dataset=args.dataset)
 
         if policy is not None:
-            answer, ctx_docs = policy_answer(env, policy, question, gold_answer, golds)
+            answer, ctx_docs = policy_answer(env, policy, question, gold_list, golds)
             # env contexts are Document objects (no retrieval score).
             ctx_view = [(getattr(d, "title", ""), getattr(d, "id", ""), None) for d in ctx_docs]
         else:
@@ -135,8 +154,7 @@ def main() -> None:
             answer = result.answer
             ctx_view = [(c.title, c.id, c.score) for c in result.contexts]
 
-        em = exact_match_score(answer, gold_answer)
-        f1 = f1_score(answer, gold_answer)
+        em, f1 = compute_em_f1(answer, gold_list)
         em_scores.append(em)
         f1_scores.append(f1)
 
@@ -154,7 +172,8 @@ def main() -> None:
         records.append({
             "example_id": example.get("_id") or example.get("id", f"{offset - 1}"),
             "question": question,
-            "gold": gold_answer,
+            "gold": gold_list[0] if gold_list else "",
+            "golds": gold_list,
             "predict": answer,
             "em": em,
             "f1": f1,
@@ -173,7 +192,7 @@ def main() -> None:
         print("=" * 80)
         print(f"Example {offset}")
         print(f"Question: {question}")
-        print(f"Gold:     {gold_answer}")
+        print(f"Gold:     {gold_list[0] if gold_list else ''}")
         print(f"Predict:  {answer}")
         print(f"EM/F1:    {em:.3f}/{f1:.3f}")
         print(f"Recall: {recall:.3f} ({len(hit)}/{len(golds)} gold, full_hit={full_hit})")
@@ -211,6 +230,7 @@ def main() -> None:
     # Persist results so visualize_results.py can reflect this exact run.
     payload = {
         "config": {
+            "dataset": args.dataset,
             "split": args.split,
             "limit": args.limit,
             "top_k": args.top_k,

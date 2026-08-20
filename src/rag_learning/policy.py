@@ -126,6 +126,16 @@ class PolicyNetwork:
     def _params(self) -> dict:
         return {"w1": self.w1, "b1": self.b1, "w2": self.w2, "b2": self.b2}
 
+    def params_snapshot(self) -> dict:
+        """Deep copy of current parameters.
+
+        Used by the trainer to measure how much a GRPO step actually moved the
+        weights (max abs delta). The GRPO objective is ~0 by construction
+        (advantages are normalized to mean 0), so weight delta is the reliable
+        "is it learning" signal.
+        """
+        return {k: v.copy() for k, v in self._params().items()}
+
     def save(self, path: str | Path) -> None:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -140,11 +150,46 @@ class PolicyNetwork:
         return net
 
 
-def group_advantages(rewards: list[float]) -> np.ndarray:
-    """GRPO group-relative advantage: A_i = (R_i - mean) / std.
+class RunningBaseline:
+    """EMA baseline for advantage computation.
 
-    Critic-free: the group's own reward stats are the baseline. Degenerate
-    group (all rewards equal) -> zero advantage (no update signal).
+    Tracks a running average of recent group returns so that advantage
+    signals are non-zero even when a single group's returns have tiny
+    variance (the root cause of the previous near-zero gradient issue).
+    """
+
+    def __init__(self, alpha: float = 0.9):
+        self.alpha = alpha
+        self.value: float = 0.0
+        self.initialized = False
+
+    def update(self, returns: list[float]) -> None:
+        mean_return = float(np.mean(returns))
+        if not self.initialized:
+            self.value = mean_return
+            self.initialized = True
+        else:
+            self.value = self.alpha * self.value + (1.0 - self.alpha) * mean_return
+
+    def advantages(self, returns: list[float]) -> np.ndarray:
+        """A_i = (R_i - baseline) / max(std, 1e-8).
+
+        Normalising by the group std keeps advantages dimensionless so the
+        gradient scale is stable across groups with very different return
+        magnitudes.
+        """
+        r = np.asarray(returns, dtype=np.float64)
+        adv = r - self.value
+        std = r.std()
+        if std > 1e-8:
+            adv = adv / std
+        return adv
+
+
+def group_advantages(rewards: list[float]) -> np.ndarray:
+    """Legacy group-relative advantage (kept for backward compat).
+
+    Prefer RunningBaseline for actual training.
     """
     r = np.asarray(rewards, dtype=np.float64)
     std = r.std()

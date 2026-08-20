@@ -22,7 +22,7 @@ class RAGResult:
     contexts: list[RetrievedContext]
 
 
-SYSTEM_PROMPT = """You are a precise question answering assistant for HotpotQA multi-hop reading.
+SYSTEM_PROMPT = """You are a precise question answering assistant for open-domain QA.
 Answer ONLY using the provided context paragraphs.
 - If the answer is found in the context, extract the exact shortest answer span from the text.
 - For yes/no questions, output ONLY "yes" or "no", nothing else.

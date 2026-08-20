@@ -17,3 +17,6 @@ artifacts/*.log
 
 # Local HF datasets cache (moved into project for portability)
 .hf_cache/
+
+# Claude Code local state (plans, settings, worktrees)
+.claude/
