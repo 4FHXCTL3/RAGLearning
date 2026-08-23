@@ -108,6 +108,59 @@ def _info_gain(new_vectors: np.ndarray, prev_vectors: np.ndarray | None) -> floa
     return float(np.clip(np.mean(novelty), 0.0, 1.0))
 
 
+class StateNormalizer:
+    """Per-component running z-score for the 4-dim state.
+
+    Each component (Hsem, Ua, Ue, delta_I) has its own mean/var tracked
+    via EMA. The state is transformed to (state - mean) / sqrt(var + eps),
+    so the policy sees "where in the training distribution is this state?"
+    rather than absolute values. This makes the policy invariant to LLM
+    calibration (a confident model has low raw Hsem, a hesitant one has
+    high raw Hsem — both map to similar normalized positions).
+
+    The normalizer is meant to be fitted during training and frozen for
+    eval. Calling `update` continuously during eval would shift the
+    normalization under the policy, which is unstable.
+    """
+
+    def __init__(self, alpha: float = 0.9, eps: float = 1e-6):
+        self.alpha = alpha
+        self.eps = eps
+        self.mean = np.zeros(4, dtype=np.float64)
+        self.var = np.ones(4, dtype=np.float64)
+        self.initialized = False
+
+    def update(self, state_vec: np.ndarray) -> None:
+        """Update mean/var with one new sample (call after each episode)."""
+        x = state_vec.astype(np.float64)
+        if not self.initialized:
+            self.mean = x.copy()
+            self.var = np.ones_like(x)
+            self.initialized = True
+            return
+        self.mean = self.alpha * self.mean + (1.0 - self.alpha) * x
+        # EMA of squared deviation from the OLD mean. Strictly speaking this
+        # is biased, but for alpha=0.9 it converges within ~50 samples which
+        # is well within the warmup window.
+        self.var = self.alpha * self.var + (1.0 - self.alpha) * (x - self.mean) ** 2
+
+    def normalize(self, state_vec: np.ndarray) -> np.ndarray:
+        """Return (state - mean) / sqrt(var + eps)."""
+        return (state_vec.astype(np.float64) - self.mean) / np.sqrt(self.var + self.eps)
+
+    def save(self) -> dict:
+        return {
+            "mean": self.mean.tolist(),
+            "var": self.var.tolist(),
+            "initialized": self.initialized,
+        }
+
+    def load(self, data: dict) -> None:
+        self.mean = np.asarray(data["mean"], dtype=np.float64)
+        self.var = np.asarray(data["var"], dtype=np.float64)
+        self.initialized = bool(data.get("initialized", True))
+
+
 class StateEncoder:
     """Builds a State vector from a query, retrieved docs, and answer samples.
 
@@ -115,8 +168,19 @@ class StateEncoder:
     during a training episode are embedded once.
     """
 
-    def __init__(self, embedder: Embedder | None = None):
+    def __init__(
+        self,
+        embedder: Embedder | None = None,
+        normalizer: "StateNormalizer | None" = None,
+    ):
         self.embedder = embedder or Embedder()
+        # Optional running-z-score normalizer. When set, encode() updates its
+        # stats with the raw state and returns a normalized State. Crucial
+        # for cross-LLM transfer: Hsem is LLM-conditional (e.g. llama3:8b
+        # produces Hsem ~0.2-0.4, llama3.2:3b ~0.4-0.6), so a policy trained
+        # on raw Hsem from one LLM mis-classifies the other. Normalized
+        # Hsem collapses these distributions into a common scale.
+        self.normalizer = normalizer
 
     def encode(
         self,
@@ -146,4 +210,20 @@ class StateEncoder:
 
         delta_i = _info_gain(doc_vectors, prev_vectors)
 
-        return State(h_sem=h_sem, u_a=u_a, u_e=u_e, delta_i=delta_i)
+        state = State(h_sem=h_sem, u_a=u_a, u_e=u_e, delta_i=delta_i)
+
+        # Optional normalization (frozen or fitted, depending on caller).
+        if self.normalizer is not None:
+            raw_vec = state.to_vector()
+            self.normalizer.update(raw_vec)
+            norm_vec = self.normalizer.normalize(raw_vec)
+            # Reconstruct State with normalized components. `State` is a
+            # frozen dataclass so we have to build a new instance.
+            state = State(
+                h_sem=float(norm_vec[0]),
+                u_a=float(norm_vec[1]),
+                u_e=float(norm_vec[2]),
+                delta_i=float(norm_vec[3]),
+            )
+
+        return state

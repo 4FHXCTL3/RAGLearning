@@ -86,13 +86,20 @@ def parse_args() -> argparse.Namespace:
         help="Where to save detailed evaluation results as JSON (used by visualize_results.py). "
         "Defaults to artifacts/eval_results_<model>.json so different models don't overwrite each other.",
     )
+    parser.add_argument(
+        "--retrieval-mode",
+        default="hybrid",
+        choices=["bm25", "dense", "hybrid"],
+        help="Index type to use. The provided --index must match this type "
+             "(a hybrid index also works for dense and bm25).",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     from rag_learning.data import load_examples
-    from rag_learning.evaluate import compute_em_f1
-    from rag_learning.index import BM25Index
+    from rag_learning.evaluate import compute_em_f1, context_recall
+    from rag_learning.index import BM25Index, DenseIndex, HybridIndex, load_any
     from rag_learning.llm import ChatLLM
     from rag_learning.rag import RAGPipeline
 
@@ -104,11 +111,46 @@ def main() -> None:
         raise FileNotFoundError(
             f"Index not found: {args.index}. Build it first with "
             f"`python scripts/build_index.py --dataset {corpus_ds} "
-            f"--split {corpus_split} --limit 200`."
+            f"--split {corpus_split} --limit 200 --retrieval-mode {args.retrieval_mode}`."
         )
 
     examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
-    index = BM25Index.load(args.index)
+    # Auto-detect index type from the pickle so callers can pass either a
+    # legacy BM25-only .pkl, a dense-only .pkl, or a combined hybrid .pkl.
+    index = load_any(args.index)
+    if isinstance(index, HybridIndex) and args.retrieval_mode in {"bm25", "dense", "hybrid"}:
+        pass  # HybridIndex supports all three modes
+    elif isinstance(index, DenseIndex) and args.retrieval_mode in {"dense", "bm25"}:
+        pass
+    elif isinstance(index, BM25Index) and args.retrieval_mode == "bm25":
+        pass
+
+    # Index coverage check. The standard "smoke test then scale up" workflow
+    # is: build_index with a generous --limit, then train on a small subset
+    # and eval on a larger subset. If the eval --limit exceeds the index's
+    # question coverage, retrieval will silently degrade on the uncovered
+    # questions. Heuristic: most datasets have ~5-15 paragraphs per question;
+    # if the index has way fewer docs than the eval set needs, warn loudly.
+    n_index_docs = len(index.documents)
+    n_eval_q = len(examples)
+    # Use a conservative lower bound: 3 paragraphs/question minimum. Below
+    # this, recall will visibly suffer.
+    min_expected_docs = n_eval_q * 3
+    if n_index_docs < min_expected_docs:
+        print(
+            f"\n  WARNING: index may be too small for this eval set.\n"
+            f"    index has {n_index_docs} docs, eval set is {n_eval_q} questions\n"
+            f"    (rule of thumb: at least {min_expected_docs} docs recommended).\n"
+            f"    Retrieval recall on some eval questions will silently degrade.\n"
+            f"    -> Re-run `scripts/build_index.py --dataset {args.dataset} "
+            f"--split {args.split} --limit {n_eval_q} --retrieval-mode {args.retrieval_mode}` "
+            f"to rebuild with full coverage.\n"
+        )
+    else:
+        raise TypeError(
+            f"--retrieval-mode {args.retrieval_mode!r} is incompatible with "
+            f"the loaded index type {type(index).__name__}."
+        )
     pipeline = RAGPipeline(index=index, llm=ChatLLM(model=args.model))
 
     # Optional: adaptive policy-driven inference (framework module 2).
@@ -117,15 +159,76 @@ def main() -> None:
     if args.policy is not None:
         from rag_learning.environment import RAGEnv
         from rag_learning.policy import PolicyNetwork
-        from rag_learning.state import StateEncoder
+        from rag_learning.state import StateEncoder, StateNormalizer
+
+        # Cross-LLM transfer: load the StateNormalizer that was fitted during
+        # training so the raw state at eval time is normalized with the same
+        # mean/var the policy was trained on. Without this, switching the LLM
+        # (or even just running with a slightly different LLM temperature)
+        # would shift Hsem and the policy would mis-classify.
+        state_normalizer = StateNormalizer()
+        ckpt_sidecar = args.policy.with_suffix(".ckpt.json")
+        ckpt_data: dict = {}
+        if ckpt_sidecar.exists():
+            try:
+                with ckpt_sidecar.open("r", encoding="utf-8") as f:
+                    ckpt_data = json.load(f)
+                if ckpt_data.get("state_normalizer"):
+                    state_normalizer.load(ckpt_data["state_normalizer"])
+                    print(
+                        f"Loaded state normalizer from checkpoint: "
+                        f"mean={[round(float(m), 3) for m in state_normalizer.mean.tolist()]}, "
+                        f"std={[round(float(s), 3) for s in (state_normalizer.var ** 0.5).tolist()]}"
+                    )
+                # If the eval LLM is not in the training LLM list, mention it
+                # (this is the supported cross-LLM transfer case).
+                train_llms = ckpt_data.get("llm_names") or []
+                if train_llms and pipeline.llm.model not in train_llms:
+                    print(
+                        f"  Note: eval LLM '{pipeline.llm.model}' was not in the "
+                        f"training LLMs ({train_llms}). Cross-LLM transfer is "
+                        f"supported via the state normalizer."
+                    )
+            except (OSError, json.JSONDecodeError) as exc:
+                print(f"  Warning: failed to read checkpoint sidecar: {exc}")
+
         policy = PolicyNetwork.load(args.policy)
         env = RAGEnv(
             index=index,
             llm=pipeline.llm,
-            encoder=StateEncoder(),
+            encoder=StateEncoder(normalizer=state_normalizer),
             max_retrievals=args.max_retrievals,
+            retrieval_mode=args.retrieval_mode,
         )
         print(f"Policy inference enabled: {args.policy}")
+
+    # Train/eval leakage check: if a trained policy is loaded and the training
+    # run used the same --split, the evaluation set is not held out. Warn
+    # loudly so the user notices in the eval log.
+    if args.policy is not None and args.policy.with_suffix(".ckpt.json").exists():
+        try:
+            with args.policy.with_suffix(".ckpt.json").open("r", encoding="utf-8") as f:
+                ckpt = json.load(f)
+            trained_split = ckpt.get("progress", {}).get("split")  # may be absent
+            if trained_split is None:
+                # Older checkpoint — fall back to reading the log
+                log_path = (
+                    ARTIFACTS_DIR / "train_logs" /
+                    f"{args.dataset}_{Path(args.policy).stem.replace('_policy', '')}_train_log.json"
+                )
+                if log_path.exists():
+                    with log_path.open("r", encoding="utf-8") as f:
+                        log_cfg = json.load(f).get("config", {})
+                    trained_split = log_cfg.get("split")
+            if trained_split == args.split:
+                print(
+                    f"\n  WARNING: train/eval split match: policy was trained on "
+                    f"split={trained_split!r} and you are evaluating on the same split. "
+                    f"Results reflect in-distribution accuracy, not held-out generalization. "
+                    f"Use --split train (or validation) for training and the other for evaluation.\n"
+                )
+        except (OSError, json.JSONDecodeError):
+            pass
 
     # Name the results file after dataset + model so different dataset/model
     # runs don't overwrite each other (e.g. eval_results_triviaqa_llama3-8b.json).
@@ -149,21 +252,38 @@ def main() -> None:
             answer, ctx_docs = policy_answer(env, policy, question, gold_list, golds)
             # env contexts are Document objects (no retrieval score).
             ctx_view = [(getattr(d, "title", ""), getattr(d, "id", ""), None) for d in ctx_docs]
+            retrieved_text = " ".join((getattr(d, "text", "") or "") for d in ctx_docs)
         else:
             result = pipeline.answer(question, top_k=args.top_k)
             answer = result.answer
             ctx_view = [(c.title, c.id, c.score) for c in result.contexts]
+            retrieved_text = " ".join(c.text or "" for c in result.contexts)
 
         em, f1 = compute_em_f1(answer, gold_list)
         em_scores.append(em)
         f1_scores.append(f1)
 
-        # Step 0 diagnostics: did retrieval actually surface the gold
-        # supporting paragraphs? Compare gold titles against retrieved titles.
+        # Step 0 diagnostics: did retrieval actually surface the evidence
+        # needed to answer? Title-based for multi-hop datasets (those with
+        # `supporting_facts`); answer-in-context for open-domain ones
+        # (TriviaQA / PopQA / NQ-Swap) where gold titles don't exist.
         retrieved_titles = {norm_title(t) for t, _id, _s in ctx_view}
-        hit = golds & retrieved_titles
-        recall = len(hit) / len(golds) if golds else 0.0
-        full_hit = bool(golds) and golds.issubset(retrieved_titles)
+        recall, full_hit, evidence_kind = context_recall(
+            gold_titles=golds,
+            gold_answers=gold_list,
+            retrieved_titles=retrieved_titles,
+            retrieved_text=retrieved_text,
+        )
+        if evidence_kind == "answer":
+            norm_text = retrieved_text.lower()
+            num_gold_answers_found = sum(
+                1 for a in gold_list
+                if (a or "").strip() and (a or "").strip().lower() in norm_text
+            )
+            num_gold_retrieved = num_gold_answers_found
+        else:
+            num_gold_answers_found = 0
+            num_gold_retrieved = len(golds & retrieved_titles)
         recall_scores.append(recall)
 
         category = "correct" if em > 0 else (
@@ -177,9 +297,13 @@ def main() -> None:
             "predict": answer,
             "em": em,
             "f1": f1,
+            "evidence_kind": evidence_kind,
             "gold_titles": sorted(golds),
             "num_gold": len(golds),
-            "num_gold_retrieved": len(hit),
+            "num_gold_retrieved": num_gold_retrieved,
+            "gold_answers": gold_list,
+            "num_gold_answers": len(gold_list),
+            "num_gold_answers_found": num_gold_answers_found,
             "recall": recall,
             "full_hit": full_hit,
             "category": category,
@@ -195,7 +319,12 @@ def main() -> None:
         print(f"Gold:     {gold_list[0] if gold_list else ''}")
         print(f"Predict:  {answer}")
         print(f"EM/F1:    {em:.3f}/{f1:.3f}")
-        print(f"Recall: {recall:.3f} ({len(hit)}/{len(golds)} gold, full_hit={full_hit})")
+        if evidence_kind == "title":
+            print(f"Recall: {recall:.3f} ({num_gold_retrieved}/{len(golds)} gold titles, full_hit={full_hit})")
+        else:
+            tag = "found" if num_gold_answers_found else "NOT found"
+            print(f"Recall: {recall:.3f} (answer {tag} in context, "
+                  f"{num_gold_answers_found}/{len(gold_list)} aliases matched, full_hit={full_hit})")
         print(f"Retrieved ({len(ctx_view)} docs):")
         for ctx_index, (t, _id, s) in enumerate(ctx_view, start=1):
             score_str = f"{s:.3f}" if s is not None else "n/a"
@@ -216,6 +345,8 @@ def main() -> None:
         return sum(r[key] for r in rows) / len(rows) if rows else 0.0
 
     print("=" * 80)
+    evidence_kind = records[0]["evidence_kind"] if records else "n/a"
+    print(f"Evidence kind:     {evidence_kind}")
     print(f"Average EM:        {avg_em:.3f}")
     print(f"Average F1:        {avg_f1:.3f}")
     print(f"Average Recall@{args.top_k}: {avg_recall:.3f}")
@@ -238,6 +369,7 @@ def main() -> None:
         },
         "summary": {
             "num_examples": len(records),
+            "evidence_kind": records[0]["evidence_kind"] if records else "title",
             "avg_em": avg_em,
             "avg_f1": avg_f1,
             "avg_recall": avg_recall,

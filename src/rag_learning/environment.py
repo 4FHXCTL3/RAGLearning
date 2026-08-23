@@ -59,17 +59,31 @@ class RAGEnv:
     def __init__(
         self,
         index: BM25Index,
-        llm: ChatLLM,
-        encoder: StateEncoder,
+        llm: ChatLLM | None = None,
+        encoder: StateEncoder | None = None,
         weights: RewardWeights | None = None,
         initial_k: int = 5,
         k_increment: int = 5,
         max_retrievals: int = 2,
         group_size: int = 3,
         sample_temperature: float = 0.7,
+        retrieval_mode: str = "bm25",
+        embedder: "Embedder | None" = None,
+        llms: list[ChatLLM] | None = None,
     ):
+        if encoder is None:
+            raise ValueError("RAGEnv requires a `encoder` (StateEncoder) — pass an instance explicitly.")
+        if llm is None and llms is None:
+            raise ValueError("RAGEnv requires at least one of `llm` or `llms`.")
+        # Normalize to a list for uniform handling.
+        if llms is not None:
+            self.llms: list[ChatLLM] = list(llms)
+        else:
+            self.llms = [llm]  # type: ignore[list-item]
+        self.llm = self.llms[0]  # backward-compat alias; may be stale between resets
+        self._current_llm: ChatLLM = self.llms[0]
+
         self.index = index
-        self.llm = llm
         self.encoder = encoder
         self.weights = weights or RewardWeights()
         self.initial_k = initial_k
@@ -77,6 +91,16 @@ class RAGEnv:
         self.max_retrievals = max_retrievals
         self.group_size = group_size
         self.sample_temperature = sample_temperature
+        # retrieval_mode ∈ {"bm25", "dense", "hybrid"}. "hybrid" requires the
+        # index to be a HybridIndex; "dense" requires a DenseIndex. We don't
+        # validate here — _retrieve() picks the right path at call time and
+        # raises a clear error if the index type doesn't match the mode.
+        self.retrieval_mode = retrieval_mode
+        self.embedder = embedder
+        # Lazy import: avoid pulling in Embedder at module load.
+        from rag_learning.embed import Embedder as _Embedder
+        if self.embedder is None and retrieval_mode in {"dense", "hybrid"}:
+            self.embedder = _Embedder()
 
         # per-episode mutable state
         self.question: str = ""
@@ -92,7 +116,36 @@ class RAGEnv:
     # --- retrieval / generation helpers ---------------------------------
 
     def _retrieve(self, k: int) -> list:
-        return [doc for doc, _score in self.index.search(self.question, top_k=k)]
+        """Top-k retrieval using the configured `retrieval_mode`.
+
+        bm25  → BM25Index.search (lexical)
+        dense → DenseIndex.search (cosine over pre-computed embeddings)
+        hybrid → HybridIndex.search with RRF fusion (BM25 + dense)
+        """
+        mode = self.retrieval_mode
+        if mode == "bm25":
+            return [doc for doc, _score in self.index.search(self.question, top_k=k)]
+        if mode == "dense":
+            from rag_learning.index import DenseIndex
+            if not isinstance(self.index, DenseIndex):
+                raise TypeError(
+                    f"retrieval_mode='dense' requires a DenseIndex (got {type(self.index).__name__}). "
+                    "Build the index with --retrieval-mode hybrid (which also produces a DenseIndex)."
+                )
+            qv = self.embedder.embed(self.question)[0]
+            return [doc for doc, _score in self.index.search(qv, top_k=k)]
+        if mode == "hybrid":
+            from rag_learning.index import HybridIndex
+            if not isinstance(self.index, HybridIndex):
+                raise TypeError(
+                    f"retrieval_mode='hybrid' requires a HybridIndex (got {type(self.index).__name__}). "
+                    "Build the index with --retrieval-mode hybrid."
+                )
+            qv = self.embedder.embed(self.question)[0]
+            return [doc for doc, _score in self.index.search(self.question, qv, top_k=k)]
+        raise ValueError(
+            f"Unknown retrieval_mode={mode!r}. Expected 'bm25', 'dense', or 'hybrid'."
+        )
 
     def _doc_texts(self, docs) -> list[str]:
         return [f"{d.title}. {d.text}" for d in docs]
@@ -104,7 +157,7 @@ class RAGEnv:
         samples: list[str] = []
         for i in range(self.group_size):
             temp = 0.0 if i == 0 else self.sample_temperature
-            raw = self.llm.generate(prompt, system_prompt=SYSTEM_PROMPT, temperature=temp)
+            raw = self._current_llm.generate(prompt, system_prompt=SYSTEM_PROMPT, temperature=temp)
             samples.append(clean_answer(raw.strip()))
         return samples
 
@@ -119,10 +172,21 @@ class RAGEnv:
 
     # --- gym-like API ----------------------------------------------------
 
-    def reset(self, question: str, gold_answers: list[str], gold_titles: set[str] | None = None) -> State:
+    def reset(
+        self,
+        question: str,
+        gold_answers: list[str],
+        gold_titles: set[str] | None = None,
+        llm: "ChatLLM | None" = None,
+    ) -> State:
         self.question = question
         self.gold_answers = gold_answers
         self.gold_titles = gold_titles or set()
+        # Per-episode LLM override. If passed, that LLM is used for this
+        # episode's Hsem sampling and final answer; otherwise the env's
+        # currently-set LLM is used (defaults to the first of `llms`).
+        if llm is not None:
+            self._current_llm = llm
         self.current_k = self.initial_k
         self.retrieval_count = 1
         self.contexts = self._retrieve(self.current_k)
@@ -137,7 +201,7 @@ class RAGEnv:
         if self._answer_samples:
             return self._answer_samples[0]
         return clean_answer(
-            self.llm.generate(
+            self._current_llm.generate(
                 build_prompt(self.question, self.contexts), system_prompt=SYSTEM_PROMPT
             ).strip()
         )

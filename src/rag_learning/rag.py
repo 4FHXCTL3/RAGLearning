@@ -22,13 +22,29 @@ class RAGResult:
     contexts: list[RetrievedContext]
 
 
-SYSTEM_PROMPT = """You are a precise question answering assistant for open-domain QA.
-Answer ONLY using the provided context paragraphs.
-- If the answer is found in the context, extract the exact shortest answer span from the text.
-- For yes/no questions, output ONLY "yes" or "no", nothing else.
-- For names, numbers, dates and entities, copy them exactly as they appear in the context.
-- Output only the final answer: no full sentences, no explanations, no quotes, no "Answer:" prefix, no trailing punctuation.
-- Do NOT repeat yourself. Answer directly."""
+# Notes on the prompt:
+# - We deliberately do NOT add a "yes/no questions -> only yes or no" rule. llama3:8b
+#   over-triggers it on factual questions and ends up answering "no" when it shouldn't.
+#   The cleaner choice is to let the model extract yes/no verbatim from the context if
+#   the question is genuinely yes/no.
+# - "unknown" is the explicit fallback when no context supports the answer. The
+#   downstream pipeline (clean_answer, align_to_context, run_eval category) already
+#   understands this token, so the policy can learn to reject honestly.
+SYSTEM_PROMPT = """You are a precise question-answering assistant for multi-hop QA.
+
+You will be given several context paragraphs from Wikipedia, each formatted as:
+  [i] Title: <title>
+      Content: <text>
+
+Task:
+- Read the paragraphs and answer the question using ONLY information from them.
+- Output the SHORTEST correct answer span, copied verbatim from the text (a name, number, date, or short phrase).
+- If the paragraphs do NOT contain enough information to answer, output exactly: unknown
+- Do NOT use outside knowledge. Do NOT guess.
+
+Output rules:
+- Output only the answer — no preamble, no explanation, no "Answer:" prefix, no quotes, no trailing punctuation.
+- Give one final answer."""
 
 
 def clean_answer(raw: str) -> str:
@@ -62,7 +78,16 @@ def clean_answer(raw: str) -> str:
     if sentences:
         text = sentences[0]
 
-    return text.rstrip(".").strip()
+    # Strip a single trailing period only when the last word before it has
+    # 4+ letters — that's the heuristic separating real sentence ends
+    # ("today." -> "today", "Paris." -> "Paris") from abbreviations
+    # ("U.S." stays "U.S.", "St." stays "St.", "Mt." stays "Mt.").
+    # The 4-letter cutoff is conservative: the longest common abbrev
+    # (e.g. "Mrs.", "etc.") is 3 letters.
+    m = re.search(r"(\w+)\.$", text)
+    if m and len(m.group(1)) >= 4:
+        text = text[: m.start(1) + len(m.group(1))]
+    return text.strip()
 
 
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
@@ -94,8 +119,10 @@ def align_to_context(answer: str, contexts: list["RetrievedContext"], threshold:
         matches = list(_WORD_RE.finditer(text))
         if not matches:
             continue
-        # Try window sizes around the answer length to tolerate minor length diffs.
-        for win in {max(1, n - 1), n, n + 1}:
+        # Try window sizes around the answer length to tolerate minor length
+        # diffs. Wider range (n-2 to n+2) absorbs paraphrased answers that
+        # pick up extra tokens, e.g. "David Seville (born 1915)" -> "David Seville".
+        for win in {max(1, n - 2), max(1, n - 1), n, n + 1, n + 2}:
             for start in range(0, max(1, len(matches) - win + 1)):
                 window = matches[start:start + win]
                 if not window:
@@ -118,12 +145,16 @@ def build_prompt(question: str, contexts: list[RetrievedContext]) -> str:
         f"[{index}] Title: {ctx.title}\nContent: {ctx.text}"
         for index, ctx in enumerate(contexts, start=1)
     )
+    # The parenthetical reinforces SYSTEM_PROMPT's two key directives (shortest
+    # span; "unknown" fallback). "Answer:" stays at the end so the model
+    # continues in the conventional completion style; clean_answer() strips any
+    # "Answer:" prefix the model may echo back.
     return f"""Context:
 {context_text}
 
 Question: {question}
 
-Answer:"""
+Answer (shortest span from the context, or 'unknown' if not present):"""
 
 
 DIRECT_PROMPT = """Answer the following question concisely and accurately using only your own knowledge.

@@ -39,7 +39,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from rag_learning.config import model_slug
 from rag_learning.data import SUPPORTED_DATASETS, corpus_spec, example_answers, gold_titles
-from rag_learning.policy import PolicyNetwork, RunningBaseline
+from rag_learning.policy import PerLLMRunningBaseline, PolicyNetwork, RunningBaseline
 
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
@@ -94,9 +94,11 @@ def parse_args() -> argparse.Namespace:
                         help="Dataset to train on.")
     parser.add_argument("--split", default="train",
                         help="Dataset split (train / validation / test).")
-    parser.add_argument("--model", default=None,
-                        help="Ollama model name to generate with. Defaults to "
-                             "LLM_MODEL from .env (e.g. --model llama3:8b).")
+    parser.add_argument("--model", action="append", default=None,
+                        help="Ollama model name(s) to train against. Repeat the flag "
+                             "to train on multiple LLMs (cross-LLM transfer via "
+                             "StateNormalizer). Defaults to LLM_MODEL from .env "
+                             "(e.g. --model llama3:8b --model qwen2.5:7b).")
     parser.add_argument("--offline", action="store_true",
                         help="Force HuggingFace datasets offline mode "
                              "(use local cache only; no downloads).")
@@ -124,6 +126,10 @@ def parse_args() -> argparse.Namespace:
                         help="Temperature for answer sampling (0 = greedy).")
     parser.add_argument("--save-every", type=int, default=50,
                         help="Save checkpoint every N questions within an epoch.")
+    parser.add_argument("--retrieval-mode", default="hybrid",
+                        choices=["bm25", "dense", "hybrid"],
+                        help="Index type. The provided --index must match "
+                             "(a hybrid index also works for dense and bm25).")
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed.")
     parser.add_argument("--index", type=Path, default=None,
@@ -149,18 +155,40 @@ def main() -> None:
     from rag_learning.data import load_examples
     from rag_learning.embed import Embedder
     from rag_learning.environment import RAGEnv, RewardWeights
-    from rag_learning.index import BM25Index
+    from rag_learning.index import BM25Index, load_any
     from rag_learning.llm import ChatLLM
-    from rag_learning.state import StateEncoder
+    from rag_learning.state import StateEncoder, StateNormalizer
 
     args = parse_args()
     if args.offline:
         os.environ["HF_DATASETS_OFFLINE"] = "1"
     rng = np.random.default_rng(args.seed)
 
-    # --- resolve paths ---
-    llm = ChatLLM(model=args.model)
-    slug = model_slug(llm.model)
+    # --- resolve multi-LLM list (single LLM if user passed one or none) ---
+    model_names = args.model if args.model else [None]  # None → fall back to .env
+    if len(model_names) > 1:
+        # Dedupe while preserving order — Ollama models with ":" need slug-safe
+        # names; this is just to avoid building the same ChatLLM twice.
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for m in model_names:
+            key = m or ""
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(m)
+        model_names = deduped
+    llms = [ChatLLM(model=m) for m in model_names]
+    is_multi_llm = len(llms) > 1
+    # Output slug: "multi-llm" if trained on >1 LLM (the policy is supposed
+    # to be reusable across LLMs in that case), else the single model name.
+    if is_multi_llm:
+        slug = "multi-llm"
+    else:
+        slug = model_slug(llms[0].model)
+    print(f"Training on {len(llms)} LLM(s): {[l.model for l in llms]}")
+    if is_multi_llm:
+        print("  → cross-LLM transfer enabled via StateNormalizer + PerLLMRunningBaseline")
 
     if args.output is None:
         args.output = ARTIFACTS_DIR / "policies" / f"{args.dataset}_{slug}_policy.npz"
@@ -186,6 +214,13 @@ def main() -> None:
     prior_elapsed = 0.0
     saved_epoch_order: list[int] | None = None
     completed_epochs = 0
+    # Extend mode (set when --limit grows vs. the previous run's checkpoint):
+    # the rewound epoch only trains the newly-added question indices, and its
+    # metrics are combined with the prefix saved in epoch_partial_*.
+    saved_limit: int = args.limit
+    epoch_partial_sum: dict = {}   # epoch_idx -> cumulative group_return sum
+    epoch_partial_count: dict = {}  # epoch_idx -> cumulative question count
+    extend_mode = False
 
     # --- load or init policy (auto-resume unless --from-scratch) ---
     policy: PolicyNetwork
@@ -207,6 +242,11 @@ def main() -> None:
             saved_epoch_order = ckpt.get("epoch_order")
             steps_log = ckpt.get("steps_log") or []
             step_counter = len(steps_log)  # each step appends exactly one entry
+            # Extend-mode fields (newer checkpoints only — defaults preserve
+            # compatibility with checkpoints written before extend support).
+            saved_limit = ckpt.get("limit", args.limit)
+            epoch_partial_sum = ckpt.get("epoch_partial_sum", {}) or {}
+            epoch_partial_count = ckpt.get("epoch_partial_count", {}) or {}
             print(f"Resumed from checkpoint: epoch={start_epoch}/{args.epochs}, "
                   f"question_idx={start_q_idx}, completed_epochs={completed_epochs}, "
                   f"steps_so_far={step_counter}")
@@ -217,8 +257,56 @@ def main() -> None:
         policy = PolicyNetwork(seed=args.seed)
         print("Initialized new policy network.")
 
-    # Check if already fully trained.
-    if completed_epochs >= args.epochs:
+    # --- detect extend mode (--limit grew vs. previous run) ---
+    # Extend mode: the previous run's last completed epoch was over `saved_limit`
+    # questions; this run will "complete" that epoch by training the new
+    # questions (indices [saved_limit, args.limit)) and leave the original
+    # questions untouched. Policy weights and metrics accumulate across runs.
+    # Gate: must have loaded a real checkpoint (i.e. we set `ckpt` above the
+    # else branch at line 225). We track that via `saved_limit` differing
+    # from `args.limit` after checkpoint load, combined with not --from-scratch.
+    ckpt_loaded = not args.from_scratch and args.output.exists() and ckpt_path.exists()
+    if saved_limit != args.limit and not args.from_scratch and ckpt_loaded:
+        if args.limit < saved_limit:
+            raise ValueError(
+                f"--limit decreased from {saved_limit} to {args.limit}. "
+                f"Use --from-scratch to start over, or restore the previous --limit."
+            )
+        # args.limit > saved_limit: enter extend mode
+        extend_mode = True
+        new_q_count = args.limit - saved_limit
+        print()
+        print("=" * 60)
+        print("!!!! EXTEND MODE DETECTED !!!!")
+        print(f"  Previous run covered {saved_limit} questions over "
+              f"{completed_epochs} completed epoch(s).")
+        print(f"  This run will complete the in-progress epoch by training "
+              f"{new_q_count} new questions")
+        print(f"  (question indices [{saved_limit}, {args.limit})).")
+        print(f"  The original {saved_limit} questions will NOT be re-trained.")
+        print("=" * 60)
+        print()
+
+        # Rewind: the last completed epoch (or in-progress epoch 0) is no
+        # longer "complete" because it didn't cover the new --limit. Roll it
+        # back so we can re-finish it over the larger range.
+        if completed_epochs > 0:
+            # Drop the metrics of the last "completed" epoch — we'll recompute
+            # it as a weighted average of the saved prefix + this run's new
+            # questions (see end-of-epoch block).
+            start_epoch = completed_epochs - 1
+            completed_epochs = start_epoch
+            if len(epoch_returns) > 0:
+                epoch_returns = epoch_returns[:-1]
+            if len(epoch_objectives) > 0:
+                epoch_objectives = epoch_objectives[:-1]
+        else:
+            # Previous run was interrupted mid-epoch 0; just keep going.
+            start_epoch = 0
+
+    # Check if already fully trained. Skipped in extend mode because we just
+    # rolled `completed_epochs` back, and the rewound epoch still needs work.
+    if completed_epochs >= args.epochs and not extend_mode:
         print(f"Training already completed: {completed_epochs} >= {args.epochs} epochs. "
               f"Use --epochs {completed_epochs + 1} (or higher) to continue training.")
         return
@@ -228,12 +316,30 @@ def main() -> None:
     # everything else -> its own contexts (see corpus_spec).
     corpus_ds, corpus_split = corpus_spec(args.dataset, args.split)
     index_limit = args.index_limit or args.limit
+    # Extend mode: if the existing BM25 index was built for the previous
+    # (smaller) --limit, it doesn't cover the new questions' context
+    # paragraphs and retrieval will silently degrade. Auto-rebuild it.
+    if extend_mode and args.index is None:
+        idx_path = build_index_path(corpus_ds, corpus_split)
+        if idx_path.exists():
+            existing = load_any(idx_path)
+            existing_n = len(existing.documents)
+            # Heuristic: expected size scales linearly with --limit. If the
+            # existing index is materially smaller than what the new --limit
+            # would produce, rebuild.
+            expected_min = int(existing_n * args.limit / max(saved_limit, 1) * 0.8)
+            if existing_n < expected_min:
+                print(f"  [extend] Index too small for new --limit "
+                      f"({existing_n} docs < ~{expected_min} expected, "
+                      f"type={type(existing).__name__}). "
+                      f"Rebuilding for {args.limit} questions...")
+                idx_path.unlink()
     if args.index is not None and args.index.exists():
-        index = BM25Index.load(args.index)
+        index = load_any(args.index)
     else:
         idx_path = _build_index(corpus_ds, corpus_split, index_limit)
-        index = BM25Index.load(idx_path)
-    print(f"Loaded BM25 index with {len(index.documents)} documents.")
+        index = load_any(idx_path)
+    print(f"Loaded {type(index).__name__} with {len(index.documents)} documents.")
 
     # --- load training examples ---
     examples = load_examples(split=args.split, limit=args.limit, dataset=args.dataset)
@@ -245,11 +351,17 @@ def main() -> None:
 
     # --- init modules ---
     embedder = Embedder()
-    encoder = StateEncoder(embedder=embedder)
+    # StateNormalizer is the cross-LLM transfer mechanism: it tracks per-component
+    # running mean/var for the 4-dim state, so the policy sees a normalized
+    # input distribution that is invariant to LLM calibration. We always
+    # create one (single-LLM and multi-LLM both benefit slightly from
+    # normalization) and let it be a no-op on small datasets.
+    state_normalizer = StateNormalizer(alpha=0.9)
+    encoder = StateEncoder(embedder=embedder, normalizer=state_normalizer)
     weights = RewardWeights()
     env = RAGEnv(
         index=index,
-        llm=llm,
+        llms=llms,
         encoder=encoder,
         weights=weights,
         initial_k=args.initial_k,
@@ -257,6 +369,7 @@ def main() -> None:
         max_retrievals=args.max_retrievals,
         group_size=args.group_size,
         sample_temperature=args.sample_temperature,
+        retrieval_mode=args.retrieval_mode,
     )
 
     # --- training loop ---
@@ -266,13 +379,50 @@ def main() -> None:
     print(f"Log:    {args.log_out}")
     print()
 
-    # Running baseline for stable advantage computation (Fix 1).
-    baseline = RunningBaseline(alpha=0.9)
+    # Per-LLM running baseline (cross-LLM transfer): one RunningBaseline per
+    # LLM name, so a switch from a strong to a weak model doesn't drag the
+    # baseline through wrong territory. Cold-start returns zero advantages
+    # to skip the gradient on a never-seen LLM.
+    if is_multi_llm:
+        baseline = PerLLMRunningBaseline(alpha=0.9)
+        # Restore on resume so we keep the per-LLM EMA continuity.
+        if extend_mode and "per_llm_baseline" in (ckpt or {}):
+            baseline.load(ckpt["per_llm_baseline"])
+    else:
+        baseline = RunningBaseline(alpha=0.9)
+        # Extend mode: restore the baseline's running mean/initialization flag
+        # so the first few hundred new steps don't have a degraded advantage
+        # signal (the baseline would otherwise start at 0 and need to "warm
+        # up" again).
+        if extend_mode and "baseline_value" in (ckpt or {}):
+            baseline.value = ckpt.get("baseline_value", 0.0)
+            baseline.initialized = ckpt.get("baseline_initialized", False)
 
     # `prior_elapsed` folds in wall-time from previous (interrupted) sessions so
     # the log's total_time_s reflects cumulative training time across resumes.
     total_start_time = time.time() - prior_elapsed
     ema_return = None  # running EMA of group return shown in the progress bar
+
+    # ---- Normalizer warmup ----
+    # The first few episodes' gradient would be polluted by an uncalibrated
+    # normalizer (mean=0, var=1 default). Run a few throwaway episodes that
+    # update only the normalizer (no policy update, no baseline update) so
+    # the first real update sees roughly normalized state. Cheap: 1 LLM call
+    # per warmup episode. Skipped for single-LLM (cheaper to just train).
+    if is_multi_llm and not state_normalizer.initialized:
+        WARMUP_EPISODES = min(20, total_questions)
+        print(f"Warming up state normalizer ({WARMUP_EPISODES} episodes)...")
+        warm_rng = np.random.default_rng(args.seed + 999)
+        for w in range(WARMUP_EPISODES):
+            ex = examples[w % total_questions]
+            q = ex["question"]
+            g = example_answers(ex, dataset=args.dataset)
+            gt = gold_titles(ex, dataset=args.dataset)
+            warm_llm = llms[warm_rng.integers(len(llms))]
+            state = env.reset(q, g, gt, llm=warm_llm)
+            warm_rng.choice([0, 1, 2])  # advance rng
+        print(f"  Normalizer warm: mean={state_normalizer.mean.round(3).tolist()}, "
+              f"std={np.sqrt(state_normalizer.var).round(3).tolist()}")
 
     for epoch in range(start_epoch, args.epochs):
         epoch_start = time.time()
@@ -292,7 +442,20 @@ def main() -> None:
         # the full epoch order — needed so checkpointed question positions are
         # global (survive multiple successive interruptions).
         epoch_position = 0
-        if epoch == start_epoch and start_q_idx > 0:
+        if extend_mode and epoch == start_epoch:
+            # Extend mode for the rewound epoch: train ONLY the newly added
+            # question indices. The original --limit worth of questions were
+            # trained in the previous run and are NOT re-trained here. Bypasses
+            # the mid-epoch resume branch below because that branch requires
+            # the saved epoch_order's length to match total_questions (it
+            # doesn't after --limit grew).
+            new_questions = list(range(saved_limit, total_questions))
+            rng.shuffle(new_questions)
+            q_indices = new_questions
+            epoch_position = saved_limit  # global position for checkpoint save
+            print(f"  [extend] Training {len(q_indices)} new question(s) for "
+                  f"epoch {epoch + 1} (indices [{saved_limit}, {total_questions})).")
+        elif epoch == start_epoch and start_q_idx > 0:
             if saved_epoch_order and len(saved_epoch_order) == total_questions:
                 epoch_order = saved_epoch_order
                 q_indices = epoch_order[start_q_idx:]
@@ -314,11 +477,18 @@ def main() -> None:
             golds = example_answers(example, dataset=args.dataset)
             gt = gold_titles(example, dataset=args.dataset)
 
+            # ---- Per-episode LLM selection (cross-LLM transfer) ----
+            # When training on multiple LLMs, sample one uniformly per question
+            # so the policy is exposed to all LLM distributions throughout
+            # training. Single-LLM training just picks that one LLM every time.
+            episode_llm = llms[rng.integers(len(llms))]
+            episode_llm_name = episode_llm.model
+
             # ---- GRPO group sampling (Fix 2: all actions sampled, no greedy continuation) ----
             group_samples: list[dict] = []
 
             for _ in range(args.group_size):
-                state = env.reset(question, golds, gt)
+                state = env.reset(question, golds, gt, llm=episode_llm)
                 first_action, old_prob = policy.sample_action(state.to_vector(), rng)
                 action = first_action
 
@@ -349,10 +519,14 @@ def main() -> None:
                     "return": total_return,
                 })
 
-            # ---- GRPO update with running baseline (Fix 1) ----
+            # ---- GRPO update with per-LLM baseline (cross-LLM transfer) ----
             returns = [s["return"] for s in group_samples]
-            baseline.update(returns)
-            advantages = baseline.advantages(returns)
+            if is_multi_llm:
+                baseline.update(returns, llm_name=episode_llm_name)
+                advantages = baseline.advantages(returns, llm_name=episode_llm_name)
+            else:
+                baseline.update(returns)
+                advantages = baseline.advantages(returns)
 
             # Measure how much this step actually moved the weights. The GRPO
             # objective is ~0 by construction (advantages normalized to mean 0),
@@ -412,7 +586,10 @@ def main() -> None:
                 _save_checkpoint(policy, args.output, ckpt_path, epoch, current_q_idx,
                                  completed_epochs, epoch_returns, epoch_objectives,
                                  action_counts, action_count_history, epoch_order,
-                                 steps_log, step_counter, time.time() - total_start_time)
+                                 steps_log, step_counter, time.time() - total_start_time,
+                                 args.limit, epoch_partial_sum, epoch_partial_count,
+                                 baseline, state_normalizer,
+                                 [l.model for l in llms])
 
                 # Refresh the live training log so visualize_training.py --watch
                 # can plot progress while training is still running.
@@ -426,9 +603,40 @@ def main() -> None:
                 _report_health(steps_log, args.save_every, action_counts, ema_return)
 
         # ---- end of epoch ----
-        avg_return = epoch_return_sum / max(epoch_steps, 1)
-        avg_obj = epoch_obj_sum / max(epoch_steps, 1)
-        avg_dw = epoch_dw_sum / max(epoch_steps, 1)
+        # Extend mode: combine the prefix (from the previous run's partial
+        # training of this epoch) with this run's new questions via a weighted
+        # average, so epoch_returns[epoch] reflects ALL questions the policy
+        # has now seen for this epoch. (Without this, the rewound epoch's
+        # metric would only cover the new questions, hiding the real
+        # improvement from the policy having seen the full dataset.)
+        if extend_mode and epoch == start_epoch:
+            prev_sum = epoch_partial_sum.get(epoch, 0.0)
+            prev_count = epoch_partial_count.get(epoch, 0)
+            prev_obj = epoch_partial_sum.get(f"obj_{epoch}", 0.0)
+            prev_dw = epoch_partial_sum.get(f"dw_{epoch}", 0.0)
+            total_count = prev_count + epoch_steps
+            if total_count > 0:
+                avg_return = (prev_sum + epoch_return_sum) / total_count
+                avg_obj = (prev_obj + epoch_obj_sum) / total_count
+                avg_dw = (prev_dw + epoch_dw_sum) / total_count
+        else:
+            avg_return = epoch_return_sum / max(epoch_steps, 1)
+            avg_obj = epoch_obj_sum / max(epoch_steps, 1)
+            avg_dw = epoch_dw_sum / max(epoch_steps, 1)
+
+        # Persist cumulative sum/count so future extends (or this run's
+        # mid-epoch resume) can recover the prefix. Keys are epoch_idx for the
+        # primary metric and f"obj_{epoch_idx}" / f"dw_{epoch_idx}" for
+        # secondary ones (avoids key collisions in the same dict).
+        epoch_partial_sum[epoch] = epoch_partial_sum.get(epoch, 0.0) + epoch_return_sum
+        epoch_partial_count[epoch] = epoch_partial_count.get(epoch, 0) + epoch_steps
+        epoch_partial_sum[f"obj_{epoch}"] = (
+            epoch_partial_sum.get(f"obj_{epoch}", 0.0) + epoch_obj_sum
+        )
+        epoch_partial_sum[f"dw_{epoch}"] = (
+            epoch_partial_sum.get(f"dw_{epoch}", 0.0) + epoch_dw_sum
+        )
+
         epoch_returns.append(avg_return)
         epoch_objectives.append(avg_obj)
         completed_epochs += 1
@@ -441,7 +649,10 @@ def main() -> None:
         _save_checkpoint(policy, args.output, ckpt_path, epoch + 1, 0,
                          completed_epochs, epoch_returns, epoch_objectives,
                          action_counts, action_count_history, epoch_order,
-                         steps_log, step_counter, time.time() - total_start_time)
+                         steps_log, step_counter, time.time() - total_start_time,
+                         args.limit, epoch_partial_sum, epoch_partial_count,
+                         baseline, state_normalizer,
+                         [l.model for l in llms])
         _write_train_log(args.log_out, _build_log_config(args, llm),
                          epoch_returns, epoch_objectives, action_counts,
                          step_counter, time.time() - total_start_time,
@@ -480,6 +691,12 @@ def _save_checkpoint(
     steps_log: list[dict],
     step_counter: int,
     elapsed_s: float,
+    limit: int,
+    epoch_partial_sum: dict,
+    epoch_partial_count: dict,
+    baseline,
+    state_normalizer: "StateNormalizer | None" = None,
+    llm_names: list[str] | None = None,
 ) -> None:
     """Atomically save a training checkpoint.
 
@@ -494,7 +711,11 @@ def _save_checkpoint(
     - the current epoch's shuffled question order (``epoch_order``) so a
       mid-epoch resume replays the same sequence,
     - the per-step log and action history, so a resumed run produces one
-      continuous, uninterrupted visualization.
+      continuous, uninterrupted visualization,
+    - ``limit`` + per-epoch partial sum/count + RunningBaseline state, so
+      a future run with a larger ``--limit`` can enter "extend mode" and
+      complete the in-progress epoch without re-training the original
+      questions.
     """
     # Save policy weights.
     tmp_policy = policy_path.with_suffix(".tmp.npz")
@@ -518,6 +739,20 @@ def _save_checkpoint(
         "action_count_history": action_count_history,
         "epoch_order": list(epoch_order),
         "steps_log": steps_log,
+        # Extend-mode fields (ignored by runs that don't opt in, but always
+        # written so a later extend can pick them up).
+        "limit": limit,
+        "epoch_partial_sum": epoch_partial_sum,
+        "epoch_partial_count": epoch_partial_count,
+        "baseline_value": baseline.value,
+        "baseline_initialized": baseline.initialized,
+        # Cross-LLM transfer fields. If a normalizer was used, save it so eval
+        # can reload and apply the same z-score. If a per-LLM baseline was
+        # used, save the per-LLM dict (otherwise `baseline_value` above is
+        # the single-LLM EMA, which is the correct restore path for that case).
+        "state_normalizer": state_normalizer.save() if state_normalizer is not None else None,
+        "llm_names": list(llm_names) if llm_names is not None else None,
+        "per_llm_baseline": baseline.save() if isinstance(baseline, PerLLMRunningBaseline) else None,
     }
     tmp_ckpt = ckpt_path.with_suffix(".tmp.ckpt.json")
     with tmp_ckpt.open("w", encoding="utf-8") as f:

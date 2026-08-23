@@ -17,7 +17,7 @@ class ChatLLM:
         base_url: str | None = None,
         api_key: str | None = None,
         temperature: float = 0.0,
-        max_tokens: int = 64,
+        max_tokens: int = 128,
     ):
         self.model = model or config.LLM_MODEL
         self.temperature = temperature
@@ -53,6 +53,10 @@ class ChatLLM:
             messages=messages,
             temperature=self.temperature if temperature is None else temperature,
             max_tokens=self.max_tokens,
-            frequency_penalty=0.5,
+            # Factual QA wants the model's most confident answer; a positive
+            # frequency_penalty pushes the model away from tokens it has
+            # already committed to, which on llama3:8b shows up as
+            # yes/no over-triggering. Default of 0 matches the OpenAI default.
+            frequency_penalty=0.0,
         )
         return response.choices[0].message.content.strip()

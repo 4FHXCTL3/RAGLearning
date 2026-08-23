@@ -196,3 +196,50 @@ def group_advantages(rewards: list[float]) -> np.ndarray:
     if std < 1e-8:
         return np.zeros_like(r)
     return (r - r.mean()) / std
+
+
+class PerLLMRunningBaseline:
+    """Per-LLM running mean/std for advantage normalization.
+
+    When the same policy is trained against multiple LLMs (cross-LLM
+    transfer via state normalization), each LLM has a different absolute
+    reward level — a strong model gives F1 ~0.6, a weak one ~0.3. A
+    single global EMA would slowly drift through the wrong territory
+    when the LLM flips, taking 50+ episodes to re-converge. This class
+    keeps one `RunningBaseline` per LLM name so the baseline is always
+    calibrated to the LLM currently in use.
+
+    Cold-start: if no observations yet for an LLM, returns zero
+    advantages — the policy update for that step is skipped, which is
+    safer than producing a wrong gradient signal.
+    """
+
+    def __init__(self, alpha: float = 0.9):
+        self.alpha = alpha
+        self._baselines: dict[str, RunningBaseline] = {}
+
+    def _get(self, llm_name: str) -> RunningBaseline:
+        if llm_name not in self._baselines:
+            self._baselines[llm_name] = RunningBaseline(self.alpha)
+        return self._baselines[llm_name]
+
+    def update(self, returns: list[float], llm_name: str) -> None:
+        self._get(llm_name).update(returns)
+
+    def advantages(self, returns: list[float], llm_name: str) -> np.ndarray:
+        baseline = self._baselines.get(llm_name)
+        if baseline is None or not baseline.initialized:
+            return np.zeros(len(returns), dtype=np.float64)
+        return baseline.advantages(returns)
+
+    def save(self) -> dict:
+        return {
+            name: {"value": b.value, "initialized": b.initialized}
+            for name, b in self._baselines.items()
+        }
+
+    def load(self, data: dict) -> None:
+        for name, payload in data.items():
+            self._baselines[name] = RunningBaseline(self.alpha)
+            self._baselines[name].value = float(payload["value"])
+            self._baselines[name].initialized = bool(payload.get("initialized", True))

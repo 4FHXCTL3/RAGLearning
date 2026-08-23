@@ -70,6 +70,53 @@ for ds in triviaqa popqa nqswap; do
 done
 ```
 
+> ⚠️ 上面这个循环里训练和评估用的 `--split` 相同（都是 `${split[$ds]}`），意味着 **评估集是训练时见过的题**——结果含数据泄漏，只能算"训练集 EM/F1"，不是论文级 held-out 数字。如果要报真实泛化数字，用下面 §7 的标准 train/eval split 流程。
+
+## 7. 标准 train/eval split（小训练、大评估、hybrid 检索）
+
+适用场景：triviaqa、hotpotqa 等 HuggingFace 上有 `train` / `validation` 两个 disjoint split 的数据集。**训练用小集合（~200 题），评估用大集合（8000+ 题）+ 训好的 policy + dense + BM25 hybrid 检索**——这是论文里报 F1/EM 的标准范式。
+
+```bash
+DS=triviaqa
+M=llama3:8b
+SLUG=llama3-8b
+
+# 1. 建 combined 索引（覆盖 train + validation 两个 split 的所有 entity_pages，
+#    内含 BM25 + dense embeddings + RRF 融合。每 split 取 2000 题去重后
+#    ~15-20k unique 段落，build 时间 2-3 分钟。
+#    不加 --limit 会索引全部 87k+9.9k 题，需要 1-3 小时且生成巨大 .pkl。）
+python scripts/build_index.py --dataset $DS --split train --split validation \
+    --limit 2000 \
+    --output artifacts/indexes/bm25_index_${DS}_train+validation.pkl \
+    --retrieval-mode hybrid
+
+# 2. 训练（小集合，train split）
+python scripts/train_policy.py --dataset $DS --model $M --split train \
+    --limit 200 --epochs 3 --lr 0.001 --group-size 3 \
+    --retrieval-mode hybrid \
+    --index artifacts/indexes/bm25_index_${DS}_train+validation.pkl
+# 期望 ~75 分钟；policy 训完保存到 artifacts/policies/${DS}_${SLUG}_policy.npz
+
+# 3. 评估（held-out，validation split，8000 题）
+python scripts/run_eval.py --dataset $DS --model $M --split validation \
+    --limit 8000 --retrieval-mode hybrid \
+    --index artifacts/indexes/bm25_index_${DS}_train+validation.pkl \
+    --policy artifacts/policies/${DS}_${SLUG}_policy.npz
+# 期望 ~5 小时；run_eval.py 会自动检测"训练和评估 split 相同"并打印 leakage 警告
+# （如果先 train 用了 train split、eval 用了 validation split，不会警告，因为这是正确的 held-out）
+
+# 4. 看结果
+python scripts/visualize_results.py \
+    --results artifacts/eval_results/eval_results_${DS}_${SLUG}_policy.json
+```
+
+**关键 flag**：
+- `build_index.py --split train --split validation`（重复 flag 合并多个 split 到一个索引）
+- `--retrieval-mode {bm25, dense, hybrid}`：hybrid 是默认也是推荐；切到 bm25 可以做消融对比
+- `run_eval.py` 的 leakage 警告：检测到 policy 训练时的 split 和当前 eval 的 split 相同时会 warn
+
+**预期收益**（vs 纯 BM25）：hybrid 检索在 triviaqa 上 F1 区间从 0.40~0.55 提到 0.50~0.65，足够补偿 held-out 评估的精度损失。
+
 单组合手动示例：
 
 ```bash

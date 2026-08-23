@@ -241,9 +241,16 @@ def load_examples(
             for i, ex in enumerate(raw)
         ]
     elif dataset == "triviaqa":
-        # Test split has no public answers, so evaluation uses validation.
-        # `rc` config ships entity_pages (Wikipedia evidence) per question.
-        split_str = f"validation[:{limit}]" if limit else "validation"
+        # The public `mandarjoshi/trivia_qa` "rc" config ships `train` and
+        # `validation` splits; the `test` split has no public answers, so we
+        # only allow those two. Honor the caller's `--split` so a workflow
+        # can train on `train` and evaluate on `validation` (or vice versa).
+        if split not in {"train", "validation"}:
+            raise ValueError(
+                f"Unsupported split '{split}' for triviaqa. "
+                "Use 'train' or 'validation' (test labels are hidden on the Hub)."
+            )
+        split_str = f"{split}[:{limit}]" if limit else split
         ds = load_dataset("mandarjoshi/trivia_qa", "rc", split=split_str, cache_dir=HF_CACHE_DIR)
     else:
         split_str = f"{split}[:{limit}]" if limit else split

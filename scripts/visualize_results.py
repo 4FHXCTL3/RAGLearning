@@ -190,12 +190,27 @@ def main() -> None:
 
         # Step 0 retrieval diagnostics (only present if run_eval recorded them).
         if "avg_recall" in summary:
+            # The label depends on which evidence kind this run measured:
+            #   "title"   -> fraction of gold supporting-paragraph titles
+            #                (HotpotQA / 2WikiMultihopQA / MuSiQue)
+            #   "answer"  -> at-least-one gold answer / alias found in retrieved
+            #                text (TriviaQA / PopQA / NQ-Swap)
+            evidence_kind = summary.get("evidence_kind", "title")
+            recall_label = (
+                f"Avg Recall@{config.get('top_k')} (gold paragraphs)"
+                if evidence_kind == "title"
+                else f"Avg Recall@{config.get('top_k')} (gold answer in context)"
+            )
+            full_hit_label = (
+                "Full-hit rate (all gold titles retrieved)"
+                if evidence_kind == "title"
+                else "Full-hit rate (gold answer found in context)"
+            )
             f.write("\n## Retrieval Diagnosis (Step 0)\n\n")
             f.write("| Metric | Value |\n")
             f.write("|--------|-------|\n")
-            f.write(f"| Avg Recall@{config.get('top_k')} (gold paragraphs) | "
-                    f"**{summary['avg_recall']:.3f}** |\n")
-            f.write(f"| Full-hit rate (all gold retrieved) | "
+            f.write(f"| {recall_label} | **{summary['avg_recall']:.3f}** |\n")
+            f.write(f"| {full_hit_label} | "
                     f"**{summary.get('full_hit_rate', 0):.3f}** |\n\n")
             f.write("**EM/F1 conditioned on retrieval** — separates "
                     "\"fix retrieval\" from \"fix generation\":\n\n")
