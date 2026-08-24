@@ -593,7 +593,7 @@ def main() -> None:
 
                 # Refresh the live training log so visualize_training.py --watch
                 # can plot progress while training is still running.
-                _write_train_log(args.log_out, _build_log_config(args, llm),
+                _write_train_log(args.log_out, _build_log_config(args, llms),
                                  epoch_returns, epoch_objectives, action_counts,
                                  step_counter, time.time() - total_start_time,
                                  steps_log)
@@ -653,7 +653,7 @@ def main() -> None:
                          args.limit, epoch_partial_sum, epoch_partial_count,
                          baseline, state_normalizer,
                          [l.model for l in llms])
-        _write_train_log(args.log_out, _build_log_config(args, llm),
+        _write_train_log(args.log_out, _build_log_config(args, llms),
                          epoch_returns, epoch_objectives, action_counts,
                          step_counter, time.time() - total_start_time,
                          steps_log)
@@ -665,7 +665,7 @@ def main() -> None:
     print(f"Action distribution: {action_counts}")
 
     # Final training log write (same schema as the live writes above).
-    _write_train_log(args.log_out, _build_log_config(args, llm), epoch_returns,
+    _write_train_log(args.log_out, _build_log_config(args, llms), epoch_returns,
                      epoch_objectives, action_counts, step_counter,
                      total_time, steps_log)
     print(f"Training log saved to {args.log_out}")
@@ -744,8 +744,12 @@ def _save_checkpoint(
         "limit": limit,
         "epoch_partial_sum": epoch_partial_sum,
         "epoch_partial_count": epoch_partial_count,
-        "baseline_value": baseline.value,
-        "baseline_initialized": baseline.initialized,
+        # Per-LLM baseline keeps a dict of per-LLM RunningBaselines rather
+        # than a single value/initialized pair, so the top-level fields are
+        # only meaningful for the single-LLM RunningBaseline path. The
+        # per-LLM state is restored from `per_llm_baseline` below.
+        "baseline_value": baseline.value if not isinstance(baseline, PerLLMRunningBaseline) else None,
+        "baseline_initialized": baseline.initialized if not isinstance(baseline, PerLLMRunningBaseline) else None,
         # Cross-LLM transfer fields. If a normalizer was used, save it so eval
         # can reload and apply the same z-score. If a per-LLM baseline was
         # used, save the per-LLM dict (otherwise `baseline_value` above is
@@ -764,8 +768,17 @@ def _save_checkpoint(
 # Live log + health helpers
 # ---------------------------------------------------------------------------
 
-def _build_log_config(args: argparse.Namespace, llm) -> dict:
-    """Config block embedded in the training log (same shape as the final log)."""
+def _build_log_config(args: argparse.Namespace, llms) -> dict:
+    """Config block embedded in the training log (same shape as the final log).
+
+    `llms` may be a single ChatLLM or a list of them; the logged `model`
+    field is a string for single-LLM runs and a list for multi-LLM runs
+    (mirroring the multi-LLM slug used for the output filenames).
+    """
+    if isinstance(llms, (list, tuple)):
+        model_field = [l.model for l in llms] if len(llms) > 1 else llms[0].model
+    else:
+        model_field = llms.model
     return {
         "dataset": args.dataset,
         "split": args.split,
@@ -779,7 +792,7 @@ def _build_log_config(args: argparse.Namespace, llm) -> dict:
         "k_increment": args.k_increment,
         "sample_temperature": args.sample_temperature,
         "seed": args.seed,
-        "model": llm.model,
+        "model": model_field,
     }
 
 
