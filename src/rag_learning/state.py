@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import Lock
 
 import numpy as np
 
@@ -24,36 +25,55 @@ class State:
         return np.array([self.h_sem, self.u_a, self.u_e, self.delta_i], dtype=np.float32)
 
 
-def _semantic_entropy(embedder: Embedder, answers: list[str], threshold: float = 0.85) -> float:
+def _semantic_entropy(answer_vecs: np.ndarray, threshold: float = 0.85) -> float:
     """Approximate semantic entropy over a group of sampled answers.
 
     Cluster answers greedily by embedding cosine similarity (a cluster = one
     "meaning"), then take the normalized Shannon entropy of the cluster-size
     distribution. All answers agreeing -> 1 cluster -> entropy 0 (confident);
     every answer differing -> many clusters -> entropy -> 1 (uncertain).
+
+    Vectors are passed in pre-embedded (caller already embedded the answer
+    samples, so we just reuse them). The clustering uses a single precomputed
+    pairwise-cosine matrix indexed by cluster — the previous implementation
+    did one ``cosine_similarity`` call per pair, the intermediate version
+    rebuilt a ``(k, d)`` reps stack every iteration. With both the matrix
+    and the per-iteration index list in place, the per-call cost is dominated
+    by the single ``(n, n)`` matmul, regardless of how many clusters form.
     """
-    cleaned = [a.strip() for a in answers if a and a.strip()]
-    if len(cleaned) <= 1:
+    n = answer_vecs.shape[0]
+    if n <= 1:
         return 0.0
 
-    vectors = embedder.embed(cleaned)
-    cluster_reps: list[np.ndarray] = []
+    # Full pairwise cosine matrix, computed once (vectors are L2-normalized
+    # by the Embedder). For n=group_size=3 this is a 3x3 matmul; for n=2 it's
+    # 2x2. Cheap enough to never need a fallback.
+    sims = answer_vecs @ answer_vecs.T
     counts: list[int] = []
-    for vec in vectors:
-        for i, rep in enumerate(cluster_reps):
-            if cosine_similarity(vec, rep) >= threshold:
-                counts[i] += 1
-                break
-        else:
-            cluster_reps.append(vec)
-            counts.append(1)
+    cluster_src: list[int] = []  # row index in `sims` of each cluster's rep
+    for i in range(n):
+        if cluster_src:
+            # Index into the precomputed matrix instead of re-allocating a
+            # (k, d) reps stack on every iteration. `sims[i, cluster_src]`
+            # gives cosines to all current cluster reps in one slice op.
+            sim_to_clusters = sims[i, cluster_src]
+            # `argmax` on a bool array returns the first True (since True
+            # sorts above False), which matches the original loop's
+            # order-preserving short-circuit.
+            joined = sim_to_clusters >= threshold
+            if joined.any():
+                idx = int(np.argmax(joined))
+                counts[idx] += 1
+                continue
+        cluster_src.append(i)
+        counts.append(1)
 
     if len(counts) <= 1:
         return 0.0
     probs = np.array(counts, dtype=np.float64) / sum(counts)
     entropy = -np.sum(probs * np.log(probs))
     # Normalize by log(n) so the value lands in [0, 1] regardless of group size.
-    return float(entropy / np.log(len(cleaned)))
+    return float(entropy / np.log(n))
 
 
 def _data_uncertainty(doc_vectors: np.ndarray) -> float:
@@ -82,8 +102,11 @@ def _epistemic_uncertainty(query_vec: np.ndarray, answer_vec: np.ndarray) -> flo
 
     Cosine distance = 1 - cosine similarity, clipped. Large distance means the
     answer is semantically far from the question -> model likely "doesn't know".
+
+    Both vectors are L2-normalized upstream, so cosine = dot product (avoids
+    the previous `np.linalg.norm(a) * np.linalg.norm(b)` round-trip).
     """
-    sim = cosine_similarity(query_vec, answer_vec)
+    sim = float(np.dot(query_vec, answer_vec))
     return float(np.clip(1.0 - sim, 0.0, 1.0))
 
 
@@ -92,19 +115,17 @@ def _info_gain(new_vectors: np.ndarray, prev_vectors: np.ndarray | None) -> floa
 
     For each new doc, distance to its nearest previous doc; average over new
     docs. No previous docs (first retrieval) -> full novelty 1.0.
+
+    Both inputs are already L2-normalized by the Embedder, so the cross-similarity
+    matrix is just a single matmul (skips the per-call re-normalization that the
+    previous version did).
     """
     if prev_vectors is None or prev_vectors.shape[0] == 0:
         return 1.0
     if new_vectors.shape[0] == 0:
         return 0.0
-    # cross cosine-sim matrix (new x prev); novelty = 1 - max sim to any prev doc
-    norms_n = np.linalg.norm(new_vectors, axis=1, keepdims=True)
-    norms_p = np.linalg.norm(prev_vectors, axis=1, keepdims=True)
-    norms_n[norms_n == 0] = 1.0
-    norms_p[norms_p == 0] = 1.0
-    sims = (new_vectors / norms_n) @ (prev_vectors / norms_p).T
-    max_sim_per_new = sims.max(axis=1)
-    novelty = 1.0 - max_sim_per_new
+    sims = new_vectors @ prev_vectors.T
+    novelty = 1.0 - sims.max(axis=1)
     return float(np.clip(np.mean(novelty), 0.0, 1.0))
 
 
@@ -129,36 +150,46 @@ class StateNormalizer:
         self.mean = np.zeros(4, dtype=np.float64)
         self.var = np.ones(4, dtype=np.float64)
         self.initialized = False
+        # Guard update/normalize/save/load so the normalizer can be shared
+        # across threads (e.g. parallel question processing in run_eval.py).
+        # Cheap: the locked region is just a few float ops.
+        self._lock = Lock()
 
     def update(self, state_vec: np.ndarray) -> None:
         """Update mean/var with one new sample (call after each episode)."""
         x = state_vec.astype(np.float64)
-        if not self.initialized:
-            self.mean = x.copy()
-            self.var = np.ones_like(x)
-            self.initialized = True
-            return
-        self.mean = self.alpha * self.mean + (1.0 - self.alpha) * x
-        # EMA of squared deviation from the OLD mean. Strictly speaking this
-        # is biased, but for alpha=0.9 it converges within ~50 samples which
-        # is well within the warmup window.
-        self.var = self.alpha * self.var + (1.0 - self.alpha) * (x - self.mean) ** 2
+        with self._lock:
+            if not self.initialized:
+                self.mean = x.copy()
+                self.var = np.ones_like(x)
+                self.initialized = True
+                return
+            self.mean = self.alpha * self.mean + (1.0 - self.alpha) * x
+            # EMA of squared deviation from the OLD mean. Strictly speaking this
+            # is biased, but for alpha=0.9 it converges within ~50 samples which
+            # is well within the warmup window.
+            self.var = self.alpha * self.var + (1.0 - self.alpha) * (x - self.mean) ** 2
 
     def normalize(self, state_vec: np.ndarray) -> np.ndarray:
         """Return (state - mean) / sqrt(var + eps)."""
-        return (state_vec.astype(np.float64) - self.mean) / np.sqrt(self.var + self.eps)
+        with self._lock:
+            mean = self.mean
+            var = self.var
+        return (state_vec.astype(np.float64) - mean) / np.sqrt(var + self.eps)
 
     def save(self) -> dict:
-        return {
-            "mean": self.mean.tolist(),
-            "var": self.var.tolist(),
-            "initialized": self.initialized,
-        }
+        with self._lock:
+            return {
+                "mean": self.mean.tolist(),
+                "var": self.var.tolist(),
+                "initialized": self.initialized,
+            }
 
     def load(self, data: dict) -> None:
-        self.mean = np.asarray(data["mean"], dtype=np.float64)
-        self.var = np.asarray(data["var"], dtype=np.float64)
-        self.initialized = bool(data.get("initialized", True))
+        with self._lock:
+            self.mean = np.asarray(data["mean"], dtype=np.float64)
+            self.var = np.asarray(data["var"], dtype=np.float64)
+            self.initialized = bool(data.get("initialized", True))
 
 
 class StateEncoder:
@@ -196,15 +227,29 @@ class StateEncoder:
             else None
         )
 
-        h_sem = _semantic_entropy(self.embedder, answer_samples)
+        # Embed the answer samples ONCE and reuse the vectors for both the
+        # semantic-entropy clustering and the epistemic-uncertainty term. The
+        # previous code embedded the answer samples again inside _semantic_entropy
+        # AND embedded a representative answer for U_e — two redundant embed
+        # round-trips per state. With ~200 questions * group_size=3 + 1
+        # retrieve step = ~800 extra embed calls per epoch eliminated.
+        cleaned = [a.strip() for a in answer_samples if a and a.strip()]
+        if cleaned:
+            answer_vecs = self.embedder.embed(cleaned)
+            h_sem = _semantic_entropy(answer_vecs)
+            # Reuse the first embedded answer as the representative answer —
+            # it is already L2-normalized and is exactly the same vector
+            # _semantic_entropy would have computed.
+            rep_answer_vec = answer_vecs[0]
+        else:
+            h_sem = 0.0
+            rep_answer_vec = None
+
         u_a = _data_uncertainty(doc_vectors)
 
-        # Use the first non-empty answer sample as the representative answer.
-        rep_answer = next((a for a in answer_samples if a and a.strip()), "")
-        if rep_answer and doc_texts:
+        if rep_answer_vec is not None and doc_vectors.shape[0] > 0:
             query_vec = self.embedder.embed(query)[0]
-            answer_vec = self.embedder.embed(rep_answer)[0]
-            u_e = _epistemic_uncertainty(query_vec, answer_vec)
+            u_e = _epistemic_uncertainty(query_vec, rep_answer_vec)
         else:
             u_e = 1.0  # no answer yet -> maximal epistemic uncertainty
 

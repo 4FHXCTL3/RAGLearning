@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import httpx
 from openai import OpenAI
 
@@ -37,11 +39,11 @@ class ChatLLM:
             http_client=http_client,
         )
 
-    def generate(
+    def _do_call(
         self,
         prompt: str,
-        system_prompt: str | None = None,
-        temperature: float | None = None,
+        system_prompt: str | None,
+        temperature: float | None,
     ) -> str:
         messages = []
         if system_prompt:
@@ -60,3 +62,48 @@ class ChatLLM:
             frequency_penalty=0.0,
         )
         return response.choices[0].message.content.strip()
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        return self._do_call(prompt, system_prompt, temperature)
+
+    def generate_batch(
+        self,
+        prompts: list[str],
+        system_prompts: list[str | None] | None = None,
+        temperatures: list[float | None] | None = None,
+        max_workers: int | None = None,
+    ) -> list[str]:
+        """Send N independent chat calls in parallel, return responses in order.
+
+        The OpenAI client is thread-safe (httpx serialises concurrent calls
+        internally), so one client is shared across worker threads. Default
+        max_workers=8 is a safe local-Ollama setting; raise it on a beefy GPU.
+
+        For ``len(prompts) == 1`` we fall back to the serial path to avoid
+        spinning up a thread pool for a single call.
+        """
+        n = len(prompts)
+        if n == 0:
+            return []
+        if n == 1:
+            return [self._do_call(
+                prompts[0],
+                system_prompts[0] if system_prompts else None,
+                temperatures[0] if temperatures else None,
+            )]
+        if system_prompts is None:
+            system_prompts = [None] * n
+        if temperatures is None:
+            temperatures = [None] * n
+        workers = max_workers or min(8, n)
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            futures = [
+                ex.submit(self._do_call, p, sp, t)
+                for p, sp, t in zip(prompts, system_prompts, temperatures)
+            ]
+            return [f.result() for f in futures]

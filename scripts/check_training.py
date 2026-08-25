@@ -140,7 +140,7 @@ def main() -> None:
         group_samples: list[dict] = []
         for _ in range(args.group_size):
             state = env.reset(question, golds, gt)
-            first_action, old_prob = policy.sample_action(state.to_vector(), rng)
+            first_action, old_prob, first_cache = policy.sample_action(state.to_vector(), rng)
             action = first_action
 
             total_return_traj = 0.0
@@ -150,7 +150,7 @@ def main() -> None:
                 total_return_traj += step_result.reward
                 done = step_result.done
                 if not done:
-                    action, _ = policy.sample_action(
+                    action, _prob, _cache = policy.sample_action(
                         step_result.state.to_vector(), rng
                     )
 
@@ -166,13 +166,14 @@ def main() -> None:
                 "action": first_action,
                 "old_prob": old_prob,
                 "return": total_return_traj,
+                "cache": first_cache,
             })
 
         # --- GRPO update ---
         returns = [s["return"] for s in group_samples]
         baseline.update(returns)
         advantages = baseline.advantages(returns)
-        objective = policy.grpo_update(
+        objective, _max_dw = policy.grpo_update(
             group_samples, advantages,
             lr=args.lr, clip_eps=0.2,
         )

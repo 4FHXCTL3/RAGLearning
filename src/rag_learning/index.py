@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 import pickle
@@ -18,16 +19,43 @@ def tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
+def tokenize_corpus(documents: list, n_workers: int = 1) -> list[list[str]]:
+    """Tokenize every document's ``"<title> <text>"`` once, optionally in parallel.
+
+    For corpora up to ~10k paragraphs, single-process is fastest (the
+    multiprocessing IPC overhead dwarfs the regex work). For larger corpora,
+    parallel tokenization scales roughly linearly with cores because the
+    regex holds the GIL — threads would not help.
+
+    Uses ``ProcessPoolExecutor`` with a small ``chunksize`` (4 chunks per
+    worker) to amortize IPC. The function is picklable, so spawn-based
+    platforms (Windows / macOS 3.8+) work too.
+    """
+    if n_workers is None or n_workers <= 1 or len(documents) < 1000:
+        return [tokenize(f"{doc.title} {doc.text}") for doc in documents]
+    title_texts = [f"{doc.title} {doc.text}" for doc in documents]
+    # ~4 chunks per worker keeps IPC overhead low while still spreading work.
+    chunksize = max(1, len(documents) // (n_workers * 4))
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        return list(ex.map(tokenize, title_texts, chunksize=chunksize))
+
+
 # ---------------------------------------------------------------------------
 # BM25 (unchanged from the original implementation)
 # ---------------------------------------------------------------------------
 
 class BM25Index:
-    def __init__(self, documents: list[Document]):
+    def __init__(self, documents: list[Document], *, n_workers: int = 1):
         if not documents:
             raise ValueError("Cannot build an index without documents.")
         self.documents = documents
-        self.tokenized_corpus = [tokenize(f"{doc.title} {doc.text}") for doc in documents]
+        # Tokenization is GIL-bound (regex), so processes > threads. For
+        # typical HotpotQA-scale corpora (<10k paragraphs) single-process
+        # is fastest; opt into multi-process for larger corpora via
+        # ``n_workers``. The bm25 stats computation in rank_bm25 is a
+        # single C-level pass over the tokenized corpus — not worth
+        # parallelizing.
+        self.tokenized_corpus = tokenize_corpus(documents, n_workers=n_workers)
         self.bm25 = BM25Okapi(self.tokenized_corpus)
 
     def search(self, query: str, top_k: int = 5) -> list[tuple[Document, float]]:

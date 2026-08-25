@@ -485,11 +485,29 @@ def main() -> None:
             episode_llm_name = episode_llm.model
 
             # ---- GRPO group sampling (Fix 2: all actions sampled, no greedy continuation) ----
+            # Observe the initial state ONCE for the whole GRPO group. The state
+            # is a deterministic function of (question, retrieved docs at k), so
+            # paying the LLM cost `group_size` times (one per group member) was
+            # pure waste. We snapshot the env, then each member rolls out from
+            # the same starting point with its own stochastic actions.
+            init_state = env.reset(question, golds, gt, llm=episode_llm)
+            init_snap = env.snapshot()
+            init_state_vec = init_state.to_vector()
+
+            # Compute the policy forward ONCE for the shared initial state. All
+            # `group_size` members sample from the same probability vector —
+            # the only thing that varies is the action drawn, which is a single
+            # `rng.choice` against the shared probs. Avoids `group_size - 1`
+            # redundant MLP forwards per question (e.g. ~1200 forwards saved
+            # over a 200-question, 3-epoch run with group_size=3).
+            shared_cache = policy._forward_cache(init_state_vec)
+            shared_probs = shared_cache["probs"]
+
             group_samples: list[dict] = []
 
             for _ in range(args.group_size):
-                state = env.reset(question, golds, gt, llm=episode_llm)
-                first_action, old_prob = policy.sample_action(state.to_vector(), rng)
+                env.restore(init_snap)
+                first_action, old_prob = policy.sample_action_from_probs(shared_probs, rng)
                 action = first_action
 
                 total_return = 0.0
@@ -502,7 +520,9 @@ def main() -> None:
                         # Sample the next action — no greedy shortcut, so the
                         # trajectory reflects the policy's true stochastic behavior
                         # and returns vary meaningfully across the group.
-                        action, _ = policy.sample_action(step_result.state.to_vector(), rng)
+                        # Subsequent states may differ per group member, so we
+                        # forward them individually (no shared cache here).
+                        action, _prob, _cache = policy.sample_action(step_result.state.to_vector(), rng)
 
                 # Track distribution of the FIRST action (the one being updated).
                 if first_action == 0:
@@ -513,10 +533,16 @@ def main() -> None:
                     action_counts["reject"] += 1
 
                 group_samples.append({
-                    "state": state.to_vector(),
+                    "state": init_state_vec,
                     "action": first_action,
                     "old_prob": old_prob,
                     "return": total_return,
+                    # Share the SAME forward cache across all group members —
+                    # they all observed the same init_state, so the cache is
+                    # identical. The GRPO update only depends on (state,
+                    # action), not on cache identity, so sharing is safe and
+                    # avoids re-running the forward in the update path.
+                    "cache": shared_cache,
                 })
 
             # ---- GRPO update with per-LLM baseline (cross-LLM transfer) ----
@@ -528,18 +554,12 @@ def main() -> None:
                 baseline.update(returns)
                 advantages = baseline.advantages(returns)
 
-            # Measure how much this step actually moved the weights. The GRPO
-            # objective is ~0 by construction (advantages normalized to mean 0),
-            # so max_weight_delta is the reliable "is it learning" signal.
-            params_before = policy.params_snapshot()
-            objective = policy.grpo_update(
+            # grpo_update now returns (objective, max_weight_delta) directly
+            # from the gradient step, so we don't need to deep-copy the
+            # policy params before/after every step just to measure learning.
+            objective, max_weight_delta = policy.grpo_update(
                 group_samples, advantages,
                 lr=args.lr, clip_eps=args.clip_eps,
-            )
-            params_after = policy.params_snapshot()
-            max_weight_delta = max(
-                float(np.abs(params_after[k] - params_before[k]).max())
-                for k in params_after
             )
 
             mean_return = float(np.mean(returns))

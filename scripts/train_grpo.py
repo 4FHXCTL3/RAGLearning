@@ -41,15 +41,18 @@ def parse_args() -> argparse.Namespace:
 
 def rollout(env, policy, state_vec, rng):
     """Sample one action from the policy at the initial state, execute it to a
-    terminal step, and return (action, old_prob, episode_return).
+    terminal step, and return (action, old_prob, episode_return, cache).
 
     We optimize the first decision (stop/retrieve/reject). If the action is
     RETRIEVE, the episode continues greedily (argmax) to termination so the
     group return reflects the full consequence of that first choice.
+
+    The returned ``cache`` is the forward-cache from the initial state; the
+    GRPO update reuses it to skip a redundant MLP forward.
     """
     from rag_learning.environment import ACTION_RETRIEVE
 
-    action, old_prob = policy.sample_action(state_vec, rng)
+    action, old_prob, cache = policy.sample_action(state_vec, rng)
     step = env.step(action)
     total = step.reward
     # Continue non-terminal episodes greedily until done (bounded by budget).
@@ -61,7 +64,7 @@ def rollout(env, policy, state_vec, rng):
         step = env.step(nxt_action)
         total += step.reward
         guard += 1
-    return action, old_prob, total, step
+    return action, old_prob, total, cache
 
 
 def main() -> None:
@@ -112,13 +115,14 @@ def main() -> None:
             for _ in range(args.group_size):
                 # Re-reset per group member so each rollout starts identically.
                 env.reset(question, gold, golds)
-                action, old_prob, ret, _ = rollout(env, policy, state_vec, rng)
-                samples.append({"state": state_vec, "action": action, "old_prob": old_prob})
+                action, old_prob, ret, cache = rollout(env, policy, state_vec, rng)
+                samples.append({"state": state_vec, "action": action,
+                                "old_prob": old_prob, "cache": cache})
                 rewards.append(ret)
                 actions.append(action)
 
             adv = group_advantages(rewards)
-            obj = policy.grpo_update(samples, adv, lr=args.lr)
+            obj, _dW = policy.grpo_update(samples, adv, lr=args.lr)
             group_ret = float(np.mean(rewards))
             ep_returns.append(group_ret)
             ep_obj.append(obj)

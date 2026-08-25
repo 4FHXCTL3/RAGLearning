@@ -45,8 +45,33 @@ class PolicyNetwork:
     def action_probs(self, state: np.ndarray) -> np.ndarray:
         return self._forward_cache(state)["probs"]
 
-    def sample_action(self, state: np.ndarray, rng: np.random.Generator) -> tuple[int, float]:
-        probs = self.action_probs(state)
+    def sample_action(self, state: np.ndarray, rng: np.random.Generator) -> tuple[int, float, dict]:
+        """Sample an action and return the forward cache for reuse.
+
+        Returns ``(action, prob, cache)``. The cache lets the caller skip a
+        redundant forward pass when the same (state, action) pair is needed
+        again later in the same step (e.g. GRPO update reuses the forward
+        that sample_action already ran).
+        """
+        cache = self._forward_cache(state)
+        probs = cache["probs"]
+        action = int(rng.choice(NUM_ACTIONS, p=probs))
+        return action, float(probs[action]), cache
+
+    def sample_action_from_probs(
+        self, probs: np.ndarray, rng: np.random.Generator
+    ) -> tuple[int, float]:
+        """Sample an action from a precomputed probability vector.
+
+        Used by the GRPO trainer: all ``group_size`` members of a group share
+        the *same* initial state, so the policy forward is the same for every
+        member. Computing it once and sampling ``group_size`` times from the
+        shared probs avoids ``group_size - 1`` redundant MLP forwards per
+        question — the only difference between group members is the action
+        drawn, and that's a single ``rng.choice`` call against the shared
+        probs. With ``group_size = 3`` and ~600 questions, that's ~1200
+        forwards eliminated (each ~5-20us).
+        """
         action = int(rng.choice(NUM_ACTIONS, p=probs))
         return action, float(probs[action])
 
@@ -79,24 +104,37 @@ class PolicyNetwork:
         advantages: np.ndarray,
         lr: float = 0.05,
         clip_eps: float = 0.2,
-    ) -> float:
+    ) -> tuple[float, float]:
         """One GRPO gradient step over a group of samples.
 
-        Each sample: {"state": vec, "action": int, "old_prob": float}.
+        Each sample: {"state": vec, "action": int, "old_prob": float,
+                     "cache": optional pre-computed _forward_cache}.
         advantages: per-sample group-relative advantage A_i.
 
         Objective (maximize): mean_i min(ratio_i * A_i, clip(ratio_i,
         1-eps, 1+eps) * A_i), where ratio_i = pi_new(a_i|s_i)/pi_old(a_i|s_i).
         We ascend, so params += lr * grad(objective).
+
+        Returns ``(mean_objective, max_weight_delta)`` — the second is the
+        delta the update actually applied to the params, computed directly
+        from the gradient so the caller doesn't have to deep-copy the params
+        before/after to measure learning. (Previous design used
+        ``params_snapshot()`` twice per step — full deep copies of all four
+        weight matrices, on every single question, just to read a single
+        scalar back. This avoids the copies entirely.)
         """
         grads = {k: np.zeros_like(v) for k, v in self._params().items()}
         total_obj = 0.0
         n = len(samples)
         if n == 0:
-            return 0.0
+            return 0.0, 0.0
 
         for sample, adv in zip(samples, advantages):
-            cache = self._forward_cache(sample["state"])
+            # Reuse the forward cache from sample_action when the trainer
+            # passes it through (it computes the SAME state vector the
+            # GRPO update is about to use, so the forward is free). Falls
+            # back to a fresh forward for callers that didn't cache it.
+            cache = sample.get("cache") or self._forward_cache(sample["state"])
             new_prob = cache["probs"][sample["action"]]
             old_prob = max(sample["old_prob"], 1e-8)
             ratio = new_prob / old_prob
@@ -116,10 +154,17 @@ class PolicyNetwork:
                     grads[k] += scale * glp[k]
 
         # Ascent step on the mean objective.
+        max_delta = 0.0
         for k, param in self._params().items():
-            param += lr * grads[k] / n
+            step = lr * grads[k] / n
+            param += step
+            # Track the max absolute delta across all params in one pass —
+            # cheaper than a second deep copy of the params after the update.
+            d = float(np.abs(step).max())
+            if d > max_delta:
+                max_delta = d
 
-        return float(total_obj / n)
+        return float(total_obj / n), max_delta
 
     # --- persistence -----------------------------------------------------
 

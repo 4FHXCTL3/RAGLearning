@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import sys
 
@@ -52,6 +53,217 @@ def policy_answer(env, policy, question, gold_answers, golds, max_steps=6):
     return answer, env.contexts
 
 
+def _evaluate_one(
+    idx: int,
+    example: dict,
+    *,
+    args,
+    pipeline,
+    policy,
+    encoder_template,
+    index,
+) -> tuple[int, dict]:
+    """Process a single example end-to-end. Returns (idx, record).
+
+    All shared, read-mostly resources (index, llm client, embedder, policy,
+    state normalizer) are taken from the parent thread; the per-question env
+    is constructed here so each worker has its own mutable state. This makes
+    ``run_eval`` trivially safe to run in parallel via ThreadPoolExecutor —
+    the LLM call is the dominant cost, and local Ollama happily handles
+    ``workers`` concurrent requests to the same model.
+    """
+    import numpy as np
+    from rag_learning.environment import RAGEnv
+    from rag_learning.evaluate import compute_em_f1, context_recall
+
+    question = example["question"]
+    gold_list = example_answers(example, dataset=args.dataset)
+    golds = gold_titles(example, dataset=args.dataset)
+
+    if policy is not None:
+        # Per-worker env so concurrent rollouts don't clobber each other.
+        env = RAGEnv(
+            index=index,
+            llm=pipeline.llm,
+            encoder=encoder_template,
+            max_retrievals=args.max_retrievals,
+            retrieval_mode=args.retrieval_mode,
+        )
+        answer, ctx_docs = policy_answer(env, policy, question, gold_list, golds)
+        ctx_view = [(getattr(d, "title", ""), getattr(d, "id", ""), None) for d in ctx_docs]
+        retrieved_text = " ".join((getattr(d, "text", "") or "") for d in ctx_docs)
+    else:
+        result = pipeline.answer(question, top_k=args.top_k)
+        answer = result.answer
+        ctx_view = [(c.title, c.id, c.score) for c in result.contexts]
+        retrieved_text = " ".join(c.text or "" for c in result.contexts)
+
+    em, f1 = compute_em_f1(answer, gold_list)
+
+    # Step 0 diagnostics: did retrieval actually surface the evidence
+    # needed to answer? Title-based for multi-hop datasets (those with
+    # `supporting_facts`); answer-in-context for open-domain ones
+    # (TriviaQA / PopQA / NQ-Swap) where gold titles don't exist.
+    retrieved_titles = {norm_title(t) for t, _id, _s in ctx_view}
+    recall, full_hit, evidence_kind = context_recall(
+        gold_titles=golds,
+        gold_answers=gold_list,
+        retrieved_titles=retrieved_titles,
+        retrieved_text=retrieved_text,
+    )
+    if evidence_kind == "answer":
+        norm_text = retrieved_text.lower()
+        num_gold_answers_found = sum(
+            1 for a in gold_list
+            if (a or "").strip() and (a or "").strip().lower() in norm_text
+        )
+        num_gold_retrieved = num_gold_answers_found
+    else:
+        num_gold_answers_found = 0
+        num_gold_retrieved = len(golds & retrieved_titles)
+
+    category = "correct" if em > 0 else (
+        "rejected_unknown" if answer.lower() == "unknown" else "incorrect_answer"
+    )
+    record = {
+        "example_id": example.get("_id") or example.get("id", str(idx)),
+        "question": question,
+        "gold": gold_list[0] if gold_list else "",
+        "golds": gold_list,
+        "predict": answer,
+        "em": em,
+        "f1": f1,
+        "evidence_kind": evidence_kind,
+        "gold_titles": sorted(golds),
+        "num_gold": len(golds),
+        "num_gold_retrieved": num_gold_retrieved,
+        "gold_answers": gold_list,
+        "num_gold_answers": len(gold_list),
+        "num_gold_answers_found": num_gold_answers_found,
+        "recall": recall,
+        "full_hit": full_hit,
+        "category": category,
+        "retrieved_contexts": [
+            {"title": t, "score": s, "id": _id}
+            for t, _id, s in ctx_view
+        ],
+    }
+    return idx, record
+
+
+def _print_example(offset: int, record: dict) -> None:
+    """Pretty-print a single example's diagnostics. Cheap; called serially
+    from the main thread after all examples are processed (or inline in
+    --workers 1 mode)."""
+    print("=" * 80)
+    print(f"Example {offset}")
+    print(f"Question: {record['question']}")
+    print(f"Gold:     {record['gold']}")
+    print(f"Predict:  {record['predict']}")
+    print(f"EM/F1:    {record['em']:.3f}/{record['f1']:.3f}")
+    if record["evidence_kind"] == "title":
+        print(
+            f"Recall: {record['recall']:.3f} "
+            f"({record['num_gold_retrieved']}/{record['num_gold']} gold titles, "
+            f"full_hit={record['full_hit']})"
+        )
+    else:
+        tag = "found" if record["num_gold_answers_found"] else "NOT found"
+        print(
+            f"Recall: {record['recall']:.3f} (answer {tag} in context, "
+            f"{record['num_gold_answers_found']}/{record['num_gold_answers']} "
+            f"aliases matched, full_hit={record['full_hit']})"
+        )
+    print(f"Retrieved ({len(record['retrieved_contexts'])} docs):")
+    for ctx_index, ctx in enumerate(record["retrieved_contexts"], start=1):
+        score = ctx.get("score")
+        score_str = f"{score:.3f}" if score is not None else "n/a"
+        print(f"  {ctx_index}. {ctx['title']} | score={score_str} | id={ctx['id']}")
+
+
+# ---------------------------------------------------------------------------
+# Incremental sidecars — extend an existing eval run without re-evaluating
+# already-done examples. Same idea as build_index's sidecar system, just
+# per-example: one JSONL line per record, append-only during the run.
+# ---------------------------------------------------------------------------
+
+def _records_path(json_path: Path) -> Path:
+    """JSONL sidecar path for per-example records.
+
+    Example: ``eval_results_foo.json`` → ``eval_results_foo_records.jsonl``.
+    """
+    return json_path.with_name(json_path.stem + "_records.jsonl")
+
+
+def _load_existing_records(
+    json_path: Path, records_path: Path
+) -> tuple[list[dict], set[str]]:
+    """Load existing records from the JSONL sidecar (preferred) or the
+    legacy summary JSON. Returns ``(records, completed_ids)``.
+
+    The JSONL is the source of truth for incremental eval. If only the
+    summary JSON exists (an old run before this feature), we extract the
+    records from its ``results`` block; ``__idx`` is re-assigned from the
+    list position so the sort-by-original-order works downstream.
+    """
+    records: list[dict] = []
+    if records_path.exists():
+        with records_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    elif json_path.exists():
+        try:
+            with json_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            data = {}
+        for i, rec in enumerate(data.get("results", [])):
+            rec = dict(rec)  # copy so we don't mutate the in-memory dict
+            rec["__idx"] = i
+            records.append(rec)
+    completed_ids = {
+        rec.get("example_id") for rec in records if rec.get("example_id") is not None
+    }
+    return records, completed_ids
+
+
+def _append_record(records_path: Path, record: dict) -> None:
+    """Append a single record (with the original example index) to the
+    JSONL sidecar. The writer holds an exclusive open so concurrent runs
+    on the same output file would race, but normal use is one process."""
+    records_path.parent.mkdir(parents=True, exist_ok=True)
+    with records_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def _print_running_summary(
+    em_scores: list, f1_scores: list, recall_scores: list, full_hits: int,
+    n_done: int, n_total: int,
+) -> None:
+    """One-line summary of cumulative metrics so far. ``n_done`` includes
+    both pre-existing and newly-evaluated examples; ``n_total`` is the
+    size of the full examples list (i.e. what a no-skip run would touch)."""
+    n = len(em_scores)
+    if not n:
+        return
+    avg_em = sum(em_scores) / n
+    avg_f1 = sum(f1_scores) / n
+    avg_recall = sum(recall_scores) / n
+    full_hit_pct = 100 * full_hits / n
+    print(
+        f"\n[Progress: {n_done}/{n_total}] "
+        f"EM={avg_em:.3f}  F1={avg_f1:.3f}  Recall={avg_recall:.3f}  "
+        f"FullHit={full_hit_pct:.1f}% ({full_hits}/{n})",
+        flush=True,
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a small QA RAG evaluation.")
     parser.add_argument("--dataset", default="hotpotqa", choices=SUPPORTED_DATASETS,
@@ -93,6 +305,43 @@ def parse_args() -> argparse.Namespace:
         help="Index type to use. The provided --index must match this type "
              "(a hybrid index also works for dense and bm25).",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Number of parallel workers to process examples. Each worker "
+             "issues its own LLM call, so this is the LLM-call concurrency. "
+             "Default 4 matches a typical local Ollama `OLLAMA_NUM_PARALLEL`. "
+             "Use --workers 1 to run serially (preserves the old per-example "
+             "print order during processing).",
+    )
+    parser.add_argument(
+        "--print-every",
+        type=int,
+        default=50,
+        help="Print a one-line running summary (EM, F1, Recall, full-hit rate) "
+             "every N examples. 0 = silent (just the final summary). 1 = print "
+             "the full per-example diagnostics block for every example "
+             "(verbose, like the old default). Default 50 strikes a balance: "
+             "you see live progress without drowning the terminal.",
+    )
+    parser.add_argument(
+        "--extend",
+        action="store_true",
+        help="Extend an existing evaluation by adding more examples instead of "
+             "re-evaluating from scratch. Reuses the JSONL records sidecar to "
+             "skip examples whose IDs are already done. Useful when you started "
+             "with --limit 200 and want to expand to --limit 1000 without "
+             "re-paying the LLM cost for the 200 you already evaluated. The "
+             "final summary JSON is rebuilt from the JSONL at the end.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-evaluate every example even if a results JSON already exists. "
+             "Implies --print-every 0 unless overridden. Existing records are "
+             "discarded.",
+    )
     return parser.parse_args()
 
 
@@ -124,6 +373,11 @@ def main() -> None:
         pass
     elif isinstance(index, BM25Index) and args.retrieval_mode == "bm25":
         pass
+    else:
+        raise TypeError(
+            f"--retrieval-mode {args.retrieval_mode!r} is incompatible with "
+            f"the loaded index type {type(index).__name__}."
+        )
 
     # Index coverage check. The standard "smoke test then scale up" workflow
     # is: build_index with a generous --limit, then train on a small subset
@@ -145,11 +399,6 @@ def main() -> None:
             f"    -> Re-run `scripts/build_index.py --dataset {args.dataset} "
             f"--split {args.split} --limit {n_eval_q} --retrieval-mode {args.retrieval_mode}` "
             f"to rebuild with full coverage.\n"
-        )
-    else:
-        raise TypeError(
-            f"--retrieval-mode {args.retrieval_mode!r} is incompatible with "
-            f"the loaded index type {type(index).__name__}."
         )
     pipeline = RAGPipeline(index=index, llm=ChatLLM(model=args.model))
 
@@ -241,94 +490,160 @@ def main() -> None:
     em_scores: list[float] = []
     f1_scores: list[float] = []
     recall_scores: list[float] = []
-    records: list[dict] = []
+    # `results` collects (idx, record) pairs from workers. The serial path
+    # appends in original order; the parallel path appends in completion
+    # order — we re-sort by idx at the end so the printed record order and
+    # the persisted JSON match the input file.
+    results: list[tuple[int, dict]] = []
 
-    for offset, example in enumerate(tqdm(examples, desc="Evaluating"), start=1):
-        question = example["question"]
-        gold_list = example_answers(example, dataset=args.dataset)
-        golds = gold_titles(example, dataset=args.dataset)
+    # Build a template encoder (or None) so workers can construct per-question
+    # envs from the same shared resources (index, llm, encoder, normalizer).
+    # We do NOT share a single env across workers — each worker's env holds
+    # mutable per-episode state (current_k, contexts, _last_state) that must
+    # not be clobbered by a concurrent rollout.
+    encoder_template = env.encoder if env is not None else None
 
-        if policy is not None:
-            answer, ctx_docs = policy_answer(env, policy, question, gold_list, golds)
-            # env contexts are Document objects (no retrieval score).
-            ctx_view = [(getattr(d, "title", ""), getattr(d, "id", ""), None) for d in ctx_docs]
-            retrieved_text = " ".join((getattr(d, "text", "") or "") for d in ctx_docs)
-        else:
-            result = pipeline.answer(question, top_k=args.top_k)
-            answer = result.answer
-            ctx_view = [(c.title, c.id, c.score) for c in result.contexts]
-            retrieved_text = " ".join(c.text or "" for c in result.contexts)
-
-        em, f1 = compute_em_f1(answer, gold_list)
-        em_scores.append(em)
-        f1_scores.append(f1)
-
-        # Step 0 diagnostics: did retrieval actually surface the evidence
-        # needed to answer? Title-based for multi-hop datasets (those with
-        # `supporting_facts`); answer-in-context for open-domain ones
-        # (TriviaQA / PopQA / NQ-Swap) where gold titles don't exist.
-        retrieved_titles = {norm_title(t) for t, _id, _s in ctx_view}
-        recall, full_hit, evidence_kind = context_recall(
-            gold_titles=golds,
-            gold_answers=gold_list,
-            retrieved_titles=retrieved_titles,
-            retrieved_text=retrieved_text,
+    # ---- Incremental sidecar: skip examples already evaluated. ----
+    records_path = _records_path(args.results_out)
+    existing_records: list[dict] = []
+    existing_ids: set[str] = set()
+    if args.extend and not args.force and args.results_out.exists():
+        existing_records, existing_ids = _load_existing_records(
+            args.results_out, records_path,
         )
-        if evidence_kind == "answer":
-            norm_text = retrieved_text.lower()
-            num_gold_answers_found = sum(
-                1 for a in gold_list
-                if (a or "").strip() and (a or "").strip().lower() in norm_text
+        # If only the legacy JSON existed, populate the JSONL sidecar now
+        # so future --extend runs can use the faster path.
+        if existing_records and not records_path.exists():
+            records_path.parent.mkdir(parents=True, exist_ok=True)
+            with records_path.open("w", encoding="utf-8") as f:
+                for rec in existing_records:
+                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    elif args.results_out.exists() and not args.force:
+        print(f"Results already exist at {args.results_out}.")
+        print("  Use --force to re-evaluate from scratch.")
+        print("  Use --extend to add more examples without re-evaluating done ones.")
+        return
+    elif args.force and args.results_out.exists():
+        # Drop the sidecar so we start clean.
+        if records_path.exists():
+            records_path.unlink()
+
+    # Filter the examples list to only those not yet evaluated. Keep the
+    # original index so the final JSON's `results` is in the input order.
+    if existing_ids:
+        todo: list[tuple[int, dict]] = [
+            (i, ex) for i, ex in enumerate(examples)
+            if (ex.get("_id") or ex.get("id", "")) not in existing_ids
+        ]
+        print(
+            f"  --extend: {len(existing_ids)} examples already evaluated, "
+            f"{len(todo)} new to run (out of {len(examples)} total).",
+            flush=True,
+        )
+    else:
+        todo = list(enumerate(examples))
+
+    if not todo:
+        print("Nothing to evaluate — all examples are already in the sidecar.")
+
+    # Decide the per-example print behaviour from --print-every. Done
+    # unconditionally so the post-loop deferred print (parallel mode)
+    # can use the same flag.
+    print_each = args.print_every == 1
+    summary_every = max(args.print_every, 1)
+    n_full_hits = 0
+    n_done_so_far = len(existing_records)
+
+    if todo:
+        # Pre-seed running stats from existing records so the running
+        # summary reflects the cumulative picture, not just new evals.
+        for rec in existing_records:
+            em_scores.append(rec["em"])
+            f1_scores.append(rec["f1"])
+            recall_scores.append(rec["recall"])
+        n_full_hits = sum(1 for r in existing_records if r["full_hit"])
+
+        if args.workers <= 1:
+            # Serial path.
+            for orig_idx, example in tqdm(
+                todo, total=len(todo), desc="Evaluating",
+                initial=len(existing_records),  # so the bar's "done" is right
+            ):
+                idx, record = _evaluate_one(
+                    orig_idx, example,
+                    args=args, pipeline=pipeline, policy=policy,
+                    encoder_template=encoder_template, index=index,
+                )
+                record["__idx"] = orig_idx
+                results.append((idx, record))
+                em_scores.append(record["em"])
+                f1_scores.append(record["f1"])
+                recall_scores.append(record["recall"])
+                n_full_hits += int(record["full_hit"])
+                _append_record(records_path, record)
+                n_done_so_far += 1
+                if print_each:
+                    _print_example(n_done_so_far, record)
+                if args.print_every > 1 and n_done_so_far % summary_every == 0:
+                    _print_running_summary(
+                        em_scores, f1_scores, recall_scores, n_full_hits,
+                        n_done_so_far, len(examples),
+                    )
+        else:
+            # Parallel path: dispatch to a thread pool.
+            pbar = tqdm(
+                total=len(examples),
+                initial=len(existing_records),
+                desc=f"Evaluating (workers={args.workers})",
             )
-            num_gold_retrieved = num_gold_answers_found
-        else:
-            num_gold_answers_found = 0
-            num_gold_retrieved = len(golds & retrieved_titles)
-        recall_scores.append(recall)
+            with ThreadPoolExecutor(max_workers=args.workers) as ex:
+                futures = {
+                    ex.submit(
+                        _evaluate_one,
+                        orig_idx, example,
+                        args=args, pipeline=pipeline, policy=policy,
+                        encoder_template=encoder_template, index=index,
+                    ): orig_idx
+                    for orig_idx, example in todo
+                }
+                for fut in as_completed(futures):
+                    idx, record = fut.result()
+                    record["__idx"] = idx
+                    results.append((idx, record))
+                    em_scores.append(record["em"])
+                    f1_scores.append(record["f1"])
+                    recall_scores.append(record["recall"])
+                    n_full_hits += int(record["full_hit"])
+                    _append_record(records_path, record)
+                    pbar.update(1)
+                    n_done_so_far += 1
+                    if args.print_every > 1 and n_done_so_far % summary_every == 0:
+                        _print_running_summary(
+                            em_scores, f1_scores, recall_scores, n_full_hits,
+                            n_done_so_far, len(examples),
+                        )
+            pbar.close()
 
-        category = "correct" if em > 0 else (
-            "rejected_unknown" if answer.lower() == "unknown" else "incorrect_answer"
-        )
-        records.append({
-            "example_id": example.get("_id") or example.get("id", f"{offset - 1}"),
-            "question": question,
-            "gold": gold_list[0] if gold_list else "",
-            "golds": gold_list,
-            "predict": answer,
-            "em": em,
-            "f1": f1,
-            "evidence_kind": evidence_kind,
-            "gold_titles": sorted(golds),
-            "num_gold": len(golds),
-            "num_gold_retrieved": num_gold_retrieved,
-            "gold_answers": gold_list,
-            "num_gold_answers": len(gold_list),
-            "num_gold_answers_found": num_gold_answers_found,
-            "recall": recall,
-            "full_hit": full_hit,
-            "category": category,
-            "retrieved_contexts": [
-                {"title": t, "score": s, "id": _id}
-                for t, _id, s in ctx_view
-            ],
-        })
+    # ---- Reconstruct the full records list in original input order. ----
+    # The JSONL is the source of truth; we read it all back so the persisted
+    # JSON's `results` block matches what the sidecar contains. This way
+    # --extend and the final summary agree, even across interrupted runs.
+    all_records, _ = _load_existing_records(args.results_out, records_path)
+    # ``__idx`` was stamped on every record; sort by it. Records from old
+    # runs (no ``__idx``) keep their JSONL-append order at the tail.
+    all_records.sort(key=lambda r: r.get("__idx", float("inf")))
 
-        print("=" * 80)
-        print(f"Example {offset}")
-        print(f"Question: {question}")
-        print(f"Gold:     {gold_list[0] if gold_list else ''}")
-        print(f"Predict:  {answer}")
-        print(f"EM/F1:    {em:.3f}/{f1:.3f}")
-        if evidence_kind == "title":
-            print(f"Recall: {recall:.3f} ({num_gold_retrieved}/{len(golds)} gold titles, full_hit={full_hit})")
-        else:
-            tag = "found" if num_gold_answers_found else "NOT found"
-            print(f"Recall: {recall:.3f} (answer {tag} in context, "
-                  f"{num_gold_answers_found}/{len(gold_list)} aliases matched, full_hit={full_hit})")
-        print(f"Retrieved ({len(ctx_view)} docs):")
-        for ctx_index, (t, _id, s) in enumerate(ctx_view, start=1):
-            score_str = f"{s:.3f}" if s is not None else "n/a"
-            print(f"  {ctx_index}. {t} | score={score_str} | id={_id}")
+    # In serial mode per-example blocks were printed inline; in parallel
+    # mode, --print-every 1 defers them to here. We only print records
+    # that were evaluated in *this* run (so --extend doesn't re-spam
+    # the terminal with already-seen diagnostics).
+    if print_each and args.workers > 1 and results:
+        new_idxs = {idx for idx, _ in results}
+        for rec in all_records:
+            if rec.get("__idx") in new_idxs:
+                _print_example(rec["__idx"] + 1, rec)
+
+    records = all_records  # the final, sorted list (used by summary + payload)
 
     avg_em = sum(em_scores) / len(em_scores) if em_scores else 0.0
     avg_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0

@@ -112,6 +112,15 @@ class RAGEnv:
         self.prev_doc_texts: list[str] | None = None
         self._answer_samples: list[str] = []
         self._last_state: State | None = None
+        # Cache of (answer_samples, state) keyed by (question, current_k).
+        # The State observation depends only on (question, retrieved docs),
+        # so GRPO group members that visit the same (q, k) reuse the same
+        # LLM-sampled answers and the same encoded state. The savings are
+        # large: each cached hit skips `group_size` LLM calls — the dominant
+        # cost in training. Cache is per-env-instance and is bounded by
+        # (num_questions * max_retrievals), so memory is not a concern for
+        # realistic training sizes.
+        self._observe_cache: dict[tuple[str, int], dict] = {}
 
     # --- retrieval / generation helpers ---------------------------------
 
@@ -152,23 +161,53 @@ class RAGEnv:
 
     def _sample_answers(self, docs) -> list[str]:
         """Generate group_size answers; sample >0 temperature for diversity so
-        semantic entropy (Hsem) is meaningful. First sample is greedy (temp 0)."""
+        semantic entropy (Hsem) is meaningful. First sample is greedy (temp 0).
+
+        All ``group_size`` LLM calls go out in parallel — the local Ollama server
+        can batch sequence slots for the same model, and waiting for the
+        previous call to finish before issuing the next is pure dead time on
+        the client side. The OpenAI client is thread-safe; one client is
+        shared across worker threads inside ``generate_batch``.
+        """
         prompt = build_prompt(self.question, docs)
-        samples: list[str] = []
-        for i in range(self.group_size):
-            temp = 0.0 if i == 0 else self.sample_temperature
-            raw = self._current_llm.generate(prompt, system_prompt=SYSTEM_PROMPT, temperature=temp)
-            samples.append(clean_answer(raw.strip()))
-        return samples
+        system_prompts = [SYSTEM_PROMPT] * self.group_size
+        # First call is greedy (temp 0); the rest use the configured sampling
+        # temperature so the Hsem distribution is non-degenerate.
+        temperatures = [0.0] + [self.sample_temperature] * (self.group_size - 1)
+        raws = self._current_llm.generate_batch(
+            [prompt] * self.group_size,
+            system_prompts=system_prompts,
+            temperatures=temperatures,
+        )
+        return [clean_answer(r.strip()) for r in raws]
 
     def _observe(self, docs) -> State:
+        # The state at (question, current_k) is fully determined by the
+        # question and the retrieved docs at that k — not by the policy's
+        # action or the group member's index. Multiple GRPO group members
+        # visit the same (q, k) and would otherwise each pay the LLM cost
+        # of resampling. Reuse the first observation.
+        cache_key = (self.question, self.current_k)
+        cached = self._observe_cache.get(cache_key)
+        if cached is not None:
+            self._answer_samples = list(cached["answer_samples"])
+            return cached["state"]
         self._answer_samples = self._sample_answers(docs)
-        return self.encoder.encode(
+        state = self.encoder.encode(
             query=self.question,
             doc_texts=self._doc_texts(docs),
             answer_samples=self._answer_samples,
             prev_doc_texts=self.prev_doc_texts,
         )
+        # Cache by (q, k). On cache hits the StateNormalizer sees fewer
+        # updates (once per (q, k) instead of group_size times); for an
+        # EMA normaliser with alpha=0.9 this is well within its smoothing
+        # window and the policy input distribution stays in the same range.
+        self._observe_cache[cache_key] = {
+            "answer_samples": list(self._answer_samples),
+            "state": state,
+        }
+        return state
 
     # --- gym-like API ----------------------------------------------------
 
@@ -196,6 +235,47 @@ class RAGEnv:
         self._last_state = state
         return state
 
+    # --- snapshot / restore ---------------------------------------------
+    # Used by the GRPO trainer to share the initial observation across all
+    # group members. Each member has its own stochastic policy rollout (so
+    # the first action / trajectory differs), but the state observation
+    # (LLM samples, embeddings, Hsem) is fully determined by the question
+    # and the retrieved docs — so the env is rewound to the same starting
+    # point between group members instead of re-paying the LLM cost.
+
+    def snapshot(self) -> dict:
+        """Capture the env's per-episode mutable state for later restore()."""
+        return {
+            "question": self.question,
+            "gold_answers": list(self.gold_answers),
+            "gold_titles": set(self.gold_titles),
+            "_current_llm": self._current_llm,
+            "current_k": self.current_k,
+            "retrieval_count": self.retrieval_count,
+            "contexts": list(self.contexts),
+            "prev_doc_texts": list(self.prev_doc_texts) if self.prev_doc_texts is not None else None,
+            "_answer_samples": list(self._answer_samples),
+            "_last_state": self._last_state,
+        }
+
+    def restore(self, snap: dict) -> None:
+        """Rewind the env to a previously captured snapshot.
+
+        Cheap: just attribute assignments. Does NOT touch ``_observe_cache``
+        — cached (q, k) observations remain valid because they depend only
+        on (question, current_k), not on env state.
+        """
+        self.question = snap["question"]
+        self.gold_answers = list(snap["gold_answers"])
+        self.gold_titles = set(snap["gold_titles"])
+        self._current_llm = snap["_current_llm"]
+        self.current_k = snap["current_k"]
+        self.retrieval_count = snap["retrieval_count"]
+        self.contexts = list(snap["contexts"])
+        self.prev_doc_texts = list(snap["prev_doc_texts"]) if snap["prev_doc_texts"] is not None else None
+        self._answer_samples = list(snap["_answer_samples"])
+        self._last_state = snap["_last_state"]
+
     def _greedy_answer(self) -> str:
         # First sample is the temp-0 greedy answer; reuse it as the final answer.
         if self._answer_samples:
@@ -211,11 +291,17 @@ class RAGEnv:
 
         Used to judge honest rejection: abstaining is honest only when the
         evidence needed to answer isn't actually available.
+
+        ``self.gold_titles`` is already lowercased + unescaped by
+        ``data.gold_titles()`` (which runs ``norm_title``), and the index
+        builder also unescapes retrieved titles. So comparing already-normalized
+        strings avoids the per-call ``html.unescape`` round-trip — the previous
+        version unescaped every retrieved title on every step (a no-op for
+        modern HotpotQA but real cost on the hot path).
         """
         if not self.gold_titles:
             return True  # unknown -> assume answerable, don't reward rejection
-        import html
-        retrieved = {html.unescape(d.title).strip().lower() for d in self.contexts}
+        retrieved = {d.title.strip().lower() for d in self.contexts}
         return self.gold_titles.issubset(retrieved)
 
     def step(self, action: int) -> StepResult:
