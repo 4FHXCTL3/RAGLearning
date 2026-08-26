@@ -6,9 +6,7 @@ venv/
 .env
 
 # Project artifacts
-artifacts/*.pkl
-artifacts/*.jsonl
-artifacts/*.log
+artifacts/
 
 # OS / editor
 .DS_Store

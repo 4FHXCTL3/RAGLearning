@@ -32,7 +32,24 @@ class Embedder:
         self._cache: dict[str, np.ndarray] = {}
 
     def _key(self, text: str) -> str:
-        return hashlib.sha1(f"{self.model}\x00{text}".encode("utf-8")).hexdigest()
+        # `errors="replace"` so lone UTF-16 surrogates (occasionally present in
+        # TriviaQA's `wiki_context`) don't crash the encoder. The hash is
+        # only used as a cache key, so a lossy-but-stable encoding is fine.
+        return hashlib.sha1(
+            f"{self.model}\x00{text}".encode("utf-8", errors="replace")
+        ).hexdigest()
+
+    def _sanitize(self, text: str) -> str:
+        """Replace unpaired UTF-16 surrogates with U+FFFD so the text is
+        encodable as UTF-8.
+
+        TriviaQA's `wiki_context` occasionally contains lone surrogates
+        (e.g. U+DC80) that Python's default utf-8 encoder rejects with
+        `UnicodeEncodeError: surrogates not allowed`. Encoding with
+        errors='replace' turns them into U+FFFD ('?'), which is harmless
+        for both embedding and JSON serialization over /api/embed.
+        """
+        return text.encode("utf-8", errors="replace").decode("utf-8")
 
     def embed(self, texts: str | list[str]) -> np.ndarray:
         """Return an (n, dim) float32 array of L2-normalized embeddings.
@@ -42,6 +59,10 @@ class Embedder:
         """
         single = isinstance(texts, str)
         items = [texts] if single else list(texts)
+        # Sanitize before hashing / sending: some TriviaQA paragraphs contain
+        # lone UTF-16 surrogates that would otherwise crash `_key`'s encoder
+        # and httpx's JSON serializer. `_sanitize` is idempotent on clean text.
+        items = [self._sanitize(t) for t in items]
         if not items:
             return np.empty((0, 0), dtype=np.float32)
 
