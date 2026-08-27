@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import sys
@@ -20,6 +21,8 @@ except (AttributeError, ValueError):
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+import numpy as np
+
 from rag_learning.data import (
     SUPPORTED_DATASETS,
     corpus_spec,
@@ -28,6 +31,10 @@ from rag_learning.data import (
     gold_titles,
     norm_title,
 )
+from rag_learning.environment import RAGEnv
+from rag_learning.evaluate import compute_em_f1, context_recall
+from rag_learning.llm import ChatLLM
+from rag_learning.rag import RAGPipeline
 
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
@@ -39,8 +46,6 @@ def policy_answer(env, policy, question, gold_answers, golds, max_steps=6):
     episode terminates. Returns (answer, contexts). Gold is only used by the
     env for reward/honesty bookkeeping, not to choose the answer.
     """
-    import numpy as np
-
     state = env.reset(question, gold_answers, golds)
     step = None
     for _ in range(max_steps):
@@ -62,6 +67,7 @@ def _evaluate_one(
     policy,
     encoder_template,
     index,
+    shared_embedder=None,
 ) -> tuple[int, dict]:
     """Process a single example end-to-end. Returns (idx, record).
 
@@ -72,10 +78,6 @@ def _evaluate_one(
     the LLM call is the dominant cost, and local Ollama happily handles
     ``workers`` concurrent requests to the same model.
     """
-    import numpy as np
-    from rag_learning.environment import RAGEnv
-    from rag_learning.evaluate import compute_em_f1, context_recall
-
     question = example["question"]
     gold_list = example_answers(example, dataset=args.dataset)
     golds = gold_titles(example, dataset=args.dataset)
@@ -88,6 +90,7 @@ def _evaluate_one(
             encoder=encoder_template,
             max_retrievals=args.max_retrievals,
             retrieval_mode=args.retrieval_mode,
+            embedder=shared_embedder,
         )
         answer, ctx_docs = policy_answer(env, policy, question, gold_list, golds)
         ctx_view = [(getattr(d, "title", ""), getattr(d, "id", ""), None) for d in ctx_docs]
@@ -242,6 +245,57 @@ def _append_record(records_path: Path, record: dict) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+class BufferedJSONLWriter:
+    """Append-only JSONL writer with batched flushes.
+
+    For TriviaQA-scale runs (2000 examples) the naive `_append_record`
+    does one open/write/close per record = 2000 fsync-flavored open
+    syscalls. With ``flush_every=64`` the open happens once, the
+    writes are coalesced into a small ``write`` syscall burst every
+    64 records, and a final flush on context exit guarantees the
+    sidecar is on disk before the script returns. The writer is
+    thread-safe (a single ``_lock`` guards the in-memory list + file
+    handle), so worker threads can ``.write()`` concurrently.
+    """
+
+    def __init__(self, path: Path, flush_every: int = 64):
+        self.path = path
+        self.flush_every = flush_every
+        self._buf: list[str] = []
+        self._lock = threading.Lock()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self._f = path.open("a", encoding="utf-8")
+
+    def write(self, record: dict) -> None:
+        line = json.dumps(record, ensure_ascii=False)
+        with self._lock:
+            self._buf.append(line)
+            if len(self._buf) >= self.flush_every:
+                self._flush_locked()
+
+    def _flush_locked(self) -> None:
+        if not self._buf:
+            return
+        self._f.write("\n".join(self._buf) + "\n")
+        self._f.flush()
+        self._buf.clear()
+
+    def flush(self) -> None:
+        with self._lock:
+            self._flush_locked()
+
+    def close(self) -> None:
+        with self._lock:
+            self._flush_locked()
+            self._f.close()
+
+    def __enter__(self) -> "BufferedJSONLWriter":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.close()
+
+
 def _print_running_summary(
     em_scores: list, f1_scores: list, recall_scores: list, full_hits: int,
     n_done: int, n_total: int,
@@ -347,10 +401,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     from rag_learning.data import load_examples
-    from rag_learning.evaluate import compute_em_f1, context_recall
     from rag_learning.index import BM25Index, DenseIndex, HybridIndex, load_any
-    from rag_learning.llm import ChatLLM
-    from rag_learning.rag import RAGPipeline
 
     args = parse_args()
     corpus_ds, corpus_split = corpus_spec(args.dataset, args.split)
@@ -402,11 +453,21 @@ def main() -> None:
         )
     pipeline = RAGPipeline(index=index, llm=ChatLLM(model=args.model))
 
+    # Build ONE shared Embedder (when needed) and hand it to every worker's
+    # RAGEnv / StateEncoder. Without this, N workers would each spin up an
+    # independent httpx client and an independent embed cache — same questions
+    # + same docs would be re-embedded N times. The httpx client is the
+    # expensive part (TCP connect, JSON serialization); the cache only saves
+    # the *model inference* cost which is the dominant fraction here.
+    shared_embedder = None
+    if args.retrieval_mode in {"dense", "hybrid"} or args.policy is not None:
+        from rag_learning.embed import Embedder
+        shared_embedder = Embedder()
+
     # Optional: adaptive policy-driven inference (framework module 2).
     policy = None
     env = None
     if args.policy is not None:
-        from rag_learning.environment import RAGEnv
         from rag_learning.policy import PolicyNetwork
         from rag_learning.state import StateEncoder, StateNormalizer
 
@@ -445,9 +506,10 @@ def main() -> None:
         env = RAGEnv(
             index=index,
             llm=pipeline.llm,
-            encoder=StateEncoder(normalizer=state_normalizer),
+            encoder=StateEncoder(embedder=shared_embedder, normalizer=state_normalizer),
             max_retrievals=args.max_retrievals,
             retrieval_mode=args.retrieval_mode,
+            embedder=shared_embedder,
         )
         print(f"Policy inference enabled: {args.policy}")
 
@@ -564,45 +626,54 @@ def main() -> None:
         n_full_hits = sum(1 for r in existing_records if r["full_hit"])
 
         if args.workers <= 1:
-            # Serial path.
-            for orig_idx, example in tqdm(
-                todo, total=len(todo), desc="Evaluating",
-                initial=len(existing_records),  # so the bar's "done" is right
-            ):
-                idx, record = _evaluate_one(
-                    orig_idx, example,
-                    args=args, pipeline=pipeline, policy=policy,
-                    encoder_template=encoder_template, index=index,
-                )
-                record["__idx"] = orig_idx
-                results.append((idx, record))
-                em_scores.append(record["em"])
-                f1_scores.append(record["f1"])
-                recall_scores.append(record["recall"])
-                n_full_hits += int(record["full_hit"])
-                _append_record(records_path, record)
-                n_done_so_far += 1
-                if print_each:
-                    _print_example(n_done_so_far, record)
-                if args.print_every > 1 and n_done_so_far % summary_every == 0:
-                    _print_running_summary(
-                        em_scores, f1_scores, recall_scores, n_full_hits,
-                        n_done_so_far, len(examples),
+            # Serial path. The BufferedJSONLWriter is used here too — same
+            # one writer per process, the batching just amortizes the per-line
+            # open/write/close across the whole run rather than only the
+            # parallel branch.
+            with BufferedJSONLWriter(records_path) as sidecar:
+                for orig_idx, example in tqdm(
+                    todo, total=len(todo), desc="Evaluating",
+                    initial=len(existing_records),  # so the bar's "done" is right
+                ):
+                    idx, record = _evaluate_one(
+                        orig_idx, example,
+                        args=args, pipeline=pipeline, policy=policy,
+                        encoder_template=encoder_template, index=index,
+                        shared_embedder=shared_embedder,
                     )
+                    record["__idx"] = orig_idx
+                    results.append((idx, record))
+                    em_scores.append(record["em"])
+                    f1_scores.append(record["f1"])
+                    recall_scores.append(record["recall"])
+                    n_full_hits += int(record["full_hit"])
+                    sidecar.write(record)
+                    n_done_so_far += 1
+                    if print_each:
+                        _print_example(n_done_so_far, record)
+                    if args.print_every > 1 and n_done_so_far % summary_every == 0:
+                        _print_running_summary(
+                            em_scores, f1_scores, recall_scores, n_full_hits,
+                            n_done_so_far, len(examples),
+                        )
         else:
-            # Parallel path: dispatch to a thread pool.
+            # Parallel path: dispatch to a thread pool. The BufferedJSONLWriter
+            # is thread-safe so all 8 workers can `.write()` concurrently
+            # without serializing at the OS file-handle level.
             pbar = tqdm(
                 total=len(examples),
                 initial=len(existing_records),
                 desc=f"Evaluating (workers={args.workers})",
             )
-            with ThreadPoolExecutor(max_workers=args.workers) as ex:
+            with BufferedJSONLWriter(records_path) as sidecar, \
+                    ThreadPoolExecutor(max_workers=args.workers) as ex:
                 futures = {
                     ex.submit(
                         _evaluate_one,
                         orig_idx, example,
                         args=args, pipeline=pipeline, policy=policy,
                         encoder_template=encoder_template, index=index,
+                        shared_embedder=shared_embedder,
                     ): orig_idx
                     for orig_idx, example in todo
                 }
@@ -614,7 +685,7 @@ def main() -> None:
                     f1_scores.append(record["f1"])
                     recall_scores.append(record["recall"])
                     n_full_hits += int(record["full_hit"])
-                    _append_record(records_path, record)
+                    sidecar.write(record)
                     pbar.update(1)
                     n_done_so_far += 1
                     if args.print_every > 1 and n_done_so_far % summary_every == 0:
@@ -625,25 +696,50 @@ def main() -> None:
             pbar.close()
 
     # ---- Reconstruct the full records list in original input order. ----
-    # The JSONL is the source of truth; we read it all back so the persisted
-    # JSON's `results` block matches what the sidecar contains. This way
-    # --extend and the final summary agree, even across interrupted runs.
-    all_records, _ = _load_existing_records(args.results_out, records_path)
-    # ``__idx`` was stamped on every record; sort by it. Records from old
-    # runs (no ``__idx``) keep their JSONL-append order at the tail.
-    all_records.sort(key=lambda r: r.get("__idx", float("inf")))
+    # The JSONL is the source of truth, but for a 2000-question run we just
+    # wrote every new record through the BufferedJSONLWriter above — re-reading
+    # the entire file would be O(N) I/O for no information we don't already
+    # have in memory. Combine the pre-seeded existing records with the
+    # freshly-evaluated ones, dedup by ``example_id`` (NOT ``__idx``: under
+    # --extend the new ``todo`` re-numbers from 0 so ``__idx`` collisions
+    # between old and new records are expected), and sort by ``__idx`` once.
+    combined = list(existing_records)
+    new_records_by_id: dict[str, dict] = {}
+    for _idx, rec in results:
+        eid = rec.get("example_id")
+        if eid is not None:
+            new_records_by_id[eid] = rec
+        else:
+            # No example_id (shouldn't happen, but be defensive) — keep by
+            # __idx so we don't drop it.
+            new_records_by_id[f"__idx:{rec.get('__idx')}"] = rec
+    # Replace any old record with the same example_id with the fresh one.
+    combined = [
+        new_records_by_id.get(rec.get("example_id") or f"__idx:{rec.get('__idx')}", rec)
+        for rec in combined
+    ]
+    # Append any new records that don't exist in the old set yet.
+    seen_ids = {rec.get("example_id") for rec in combined}
+    for _idx, rec in results:
+        eid = rec.get("example_id")
+        if eid not in seen_ids:
+            combined.append(rec)
+            seen_ids.add(eid)
+    combined.sort(key=lambda r: r.get("__idx", float("inf")))
 
     # In serial mode per-example blocks were printed inline; in parallel
     # mode, --print-every 1 defers them to here. We only print records
     # that were evaluated in *this* run (so --extend doesn't re-spam
-    # the terminal with already-seen diagnostics).
+    # the terminal with already-seen diagnostics). Use ``example_id``
+    # to detect "this run" — see comment above on why ``__idx`` is
+    # unreliable under --extend.
     if print_each and args.workers > 1 and results:
-        new_idxs = {idx for idx, _ in results}
-        for rec in all_records:
-            if rec.get("__idx") in new_idxs:
+        new_ids = {rec.get("example_id") for _idx, rec in results}
+        for rec in combined:
+            if rec.get("example_id") in new_ids:
                 _print_example(rec["__idx"] + 1, rec)
 
-    records = all_records  # the final, sorted list (used by summary + payload)
+    records = combined  # the final, sorted list (used by summary + payload)
 
     avg_em = sum(em_scores) / len(em_scores) if em_scores else 0.0
     avg_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0

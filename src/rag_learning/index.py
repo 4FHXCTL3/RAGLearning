@@ -197,6 +197,15 @@ class HybridIndex:
         self.bm25 = bm25
         self.dense = dense
         self.documents = bm25.documents  # alias for callers that expect .documents
+        # O(1) doc-id -> list-index map. Replaces the previous O(n) list.index
+        # scan that dominated `search` cost on 78万-doc TriviaQA corpora.
+        # `setdefault` keeps the FIRST occurrence (matching list.index() semantics)
+        # — TriviaQA's `entity_pages` puts the same paragraph under multiple
+        # entities, so 11万 docs have duplicate ids; using `d[i] = i` would jump
+        # to the LAST duplicate and silently drop / reorder the result.
+        self._doc_id_to_idx: dict[str, int] = {}
+        for i, doc in enumerate(self.documents):
+            self._doc_id_to_idx.setdefault(doc.id, i)
 
     def search(
         self,
@@ -211,15 +220,16 @@ class HybridIndex:
             raise ValueError("At least one of `query` or `query_vec` must be set.")
 
         candidate_k = min(top_k * self.OVERFETCH, len(self.documents))
+        id2idx = self._doc_id_to_idx
         bm25_ranked: list[int] = []
         if run_bm25:
             bm25_hits = self.bm25.search(query, top_k=candidate_k)
-            bm25_ranked = [self.documents.index(d) for d, _ in bm25_hits]
+            bm25_ranked = [id2idx[d.id] for d, _ in bm25_hits]
 
         dense_ranked: list[int] = []
         if run_dense:
             dense_hits = self.dense.search(query_vec, top_k=candidate_k)
-            dense_ranked = [self.documents.index(d) for d, _ in dense_hits]
+            dense_ranked = [id2idx[d.id] for d, _ in dense_hits]
 
         # If only one branch ran, return its results directly (no fusion needed).
         if not run_bm25:
