@@ -58,6 +58,25 @@ def policy_answer(env, policy, question, gold_answers, golds, max_steps=6):
     return answer, env.contexts
 
 
+def _example_id(example: dict, idx: int) -> str:
+    """Stable identifier for an example, used as the JSONL sidecar's
+    incremental-resume key.
+
+    Always returns ``str(idx)``. The example's dataset-specific id
+    (``_id`` / ``question_id`` / ``id``) is NOT used because:
+      1. Not every dataset exposes a stable per-row id (TriviaQA uses
+         ``question_id``, nqswap synthesises ``"nq:{i}"``, hotpotqa uses
+         ``_id`` — three different fields).
+      2. The loop index is stable as long as the user uses the same
+         ``--limit`` / ``--split`` / ``--dataset`` between runs, which is
+         exactly the contract ``--extend`` already requires.
+      3. Using the loop index keeps new runs byte-compatible with
+         sidecars written by earlier versions of the code, so existing
+         eval runs can resume without a forced rebuild.
+    """
+    return str(idx)
+
+
 def _evaluate_one(
     idx: int,
     example: dict,
@@ -129,7 +148,7 @@ def _evaluate_one(
         "rejected_unknown" if answer.lower() == "unknown" else "incorrect_answer"
     )
     record = {
-        "example_id": example.get("_id") or example.get("id", str(idx)),
+        "example_id": _example_id(example, idx),
         "question": question,
         "gold": gold_list[0] if gold_list else "",
         "golds": gold_list,
@@ -595,7 +614,7 @@ def main() -> None:
     if existing_ids:
         todo: list[tuple[int, dict]] = [
             (i, ex) for i, ex in enumerate(examples)
-            if (ex.get("_id") or ex.get("id", "")) not in existing_ids
+            if _example_id(ex, i) not in existing_ids
         ]
         print(
             f"  --extend: {len(existing_ids)} examples already evaluated, "
