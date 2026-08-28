@@ -64,8 +64,28 @@ def clean_answer(raw: str) -> str:
     if lines:
         text = lines[-1]
 
-    # Strip a leading "Answer:" / "The answer is" style prefix.
-    text = re.sub(r"^(the\s+)?(final\s+)?answer\s*(is)?\s*[:\-]?\s*", "", text, flags=re.I)
+    # Strip a leading verbose prefix the model frequently wraps its answer in.
+    # The original "Answer: / The answer is" branch is kept (last alternative)
+    # so its behaviour is unchanged; the new alternatives cover llama2:7b's
+    # common templates ("to the question is:", "Therefore, ...", "Based on
+    # the context, ...") that previously left a sentence wrapper around the
+    # gold span and broke EM scoring. Each branch is anchored at ^ and
+    # non-greedy so we only strip the leading fragment, never the answer span.
+    verbose_prefix = (
+        r"^(?:"
+        r"to the question is\s*[:\-]?\s*"
+        r"|therefore,?\s+"
+        r"|thus,?\s+"
+        r"|hence,?\s+"
+        r"|so,?\s+"
+        r"|according to (the )?(context|paragraphs?|passage|information)\s*,?\s*"
+        r"|based on (the )?(context|paragraphs?|passage|information)\s*,?\s*"
+        r"|in (the )?(context|paragraphs?|passage|information)\s*,?\s*"
+        r"|the (context|paragraphs?|passage)\s+(provides?|says?|states?|mentions?)\s+(that\s+)?"
+        r"|(the\s+)?(final\s+)?answer\s*(is)?\s*[:\-]?\s*"
+        r")"
+    )
+    text = re.sub(verbose_prefix, "", text, flags=re.I)
     text = text.strip().strip('"').strip()
 
     # Collapse an explicit yes/no verdict to the bare token.
@@ -93,7 +113,7 @@ def clean_answer(raw: str) -> str:
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
 
 
-def align_to_context(answer: str, contexts: list["RetrievedContext"], threshold: float = 0.5) -> str:
+def align_to_context(answer: str, contexts, threshold: float = 0.5) -> str:
     """Snap a paraphrased answer onto the exact span it matches in the context.
 
     HotpotQA is scored by exact-span EM/F1, so a correct-but-reworded answer
@@ -101,6 +121,12 @@ def align_to_context(answer: str, contexts: list["RetrievedContext"], threshold:
     over each retrieved paragraph and, if a window's token Jaccard overlap with
     the answer clears `threshold`, return that window's *original* substring so
     it matches the gold span verbatim. yes/no and empty answers are left as-is.
+
+    The `contexts` argument is duck-typed: any object with a ``.text``
+    attribute works (e.g. ``rag.RetrievedContext`` from the baseline path and
+    ``data.Document`` from the policy-driven RAGEnv path both expose
+    ``.text``). This keeps a single canonical implementation reusable from
+    both pipelines.
     """
     ans = (answer or "").strip()
     if not ans or ans.lower() in {"yes", "no", "unknown"}:
@@ -115,7 +141,7 @@ def align_to_context(answer: str, contexts: list["RetrievedContext"], threshold:
     best_score = 0.0
     best_span = None
     for ctx in contexts:
-        text = ctx.text or ""
+        text = getattr(ctx, "text", "") or ""
         matches = list(_WORD_RE.finditer(text))
         if not matches:
             continue

@@ -7,7 +7,7 @@ import numpy as np
 from rag_learning.evaluate import compute_em_f1
 from rag_learning.index import BM25Index
 from rag_learning.llm import ChatLLM
-from rag_learning.rag import SYSTEM_PROMPT, build_prompt, clean_answer
+from rag_learning.rag import SYSTEM_PROMPT, align_to_context, build_prompt, clean_answer
 from rag_learning.state import State, StateEncoder
 
 # Action space (framework module 2, simplified 3-action version).
@@ -279,12 +279,22 @@ class RAGEnv:
     def _greedy_answer(self) -> str:
         # First sample is the temp-0 greedy answer; reuse it as the final answer.
         if self._answer_samples:
-            return self._answer_samples[0]
-        return clean_answer(
-            self._current_llm.generate(
-                build_prompt(self.question, self.contexts), system_prompt=SYSTEM_PROMPT
-            ).strip()
-        )
+            answer = self._answer_samples[0]
+        else:
+            answer = clean_answer(
+                self._current_llm.generate(
+                    build_prompt(self.question, self.contexts), system_prompt=SYSTEM_PROMPT
+                ).strip()
+            )
+        # Snap paraphrased answers onto the verbatim context span — mirrors
+        # RAGPipeline.answer(), which has always done this. The policy path
+        # previously skipped this step, so verbose wrappers ("The X is Y")
+        # were not snapped to "Y" and lost EM even when the gold span was
+        # present in the retrieved paragraphs. context-aware snap here is
+        # cheap (sliding-window Jaccard, no extra LLM call) and recovers
+        # those points. align_to_context is duck-typed on `.text`, so it
+        # accepts the data.Document objects in self.contexts directly.
+        return align_to_context(answer, self.contexts)
 
     def _gold_is_retrievable(self) -> bool:
         """Whether the gold supporting docs are present in current contexts.
