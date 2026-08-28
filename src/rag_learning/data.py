@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import html
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -107,13 +108,18 @@ def _split_paragraphs(example_id: str, title: str, text: str) -> Iterable[Docume
 
 def gold_titles(example, dataset: str = "hotpotqa") -> set[str]:
     """Set of normalized gold supporting-paragraph titles for one example."""
-    if dataset in {"popqa", "nqswap", "triviaqa"}:
-        # These datasets carry no supporting-fact titles. Consequence for the
-        # adaptive env: with an empty gold set, _gold_is_retrievable() returns
-        # True, so REJECT is always penalized and the retrieval bonus always
-        # fires. That is the right inductive bias here — the answer *is*
-        # retrievable (PopQA/TriviaQA) and for NQ-Swap the noise test measures
-        # exactly whether the model answers from irrelevant context.
+    if dataset == "popqa":
+        # PopQA 没有 supporting_facts,但 o_wiki_title 是 gold 答案的标准
+        # Wikipedia 标题(如 "Politician"、"Talent manager")。如果检索命中
+        # 这个标题对应的段落,_gold_is_retrievable 应该返回 True,这样
+        # REJECT 才会 honest、retrieval bonus 才有意义。
+        title = example.get("o_wiki_title")
+        if title:
+            return {norm_title(title)}
+        return set()
+    if dataset in {"nqswap", "triviaqa"}:
+        # 这两个数据集故意不提供 gold_titles(NQ-Swap 噪声测试,
+        # TriviaQA 用 question_id/entity_pages 走另一套机制)。
         return set()
     if dataset == "2wikimultihopqa":
         sf_raw = example.get("supporting_facts")
@@ -219,9 +225,18 @@ def load_examples(
         split_str = f"train[:{limit}]" if limit else "train"
         ds = load_dataset(WIKI_SIMPLE_REPO, WIKI_SIMPLE, split=split_str, cache_dir=HF_CACHE_DIR)
     elif dataset == "popqa":
-        # Open-domain long-tail QA. Only a test split exists; no passages.
+        # Open-domain long-tail QA. Only a test split exists on HF(14267 条)。
+        # 强制 80/20 train/eval 切分(基于 idx % 5),与 TriviaQA 流程对齐:
+        #   --split train  → 80% (idx % 5 != 0),~11413 条
+        #   --split eval   → 20% (idx % 5 == 0),~2854 条
+        #   --split test   → 100%(兼容老调用,全部 14267 条)
         split_str = f"test[:{limit}]" if limit else "test"
         ds = load_dataset("akariasai/PopQA", split=split_str, cache_dir=HF_CACHE_DIR)
+        if split == "eval":
+            ds = ds.filter(lambda ex, idx: idx % 5 == 0, with_indices=True)
+        elif split == "train":
+            ds = ds.filter(lambda ex, idx: idx % 5 != 0, with_indices=True)
+        # 老的 "test" 行为不变,返回全量
     elif dataset == "nqswap":
         # NQ-Swap: NQ open questions + answers, no passages. Retrieval runs
         # over the unrelated noise corpus (NQSWAP_NOISE_CORPUS) so the gold
@@ -261,9 +276,58 @@ def load_examples(
 
 def iter_context_paragraphs(examples, dataset: str = "hotpotqa") -> Iterable[Document]:
     """Yield paragraph-level documents from dataset contexts."""
-    if dataset in {"popqa", "nqswap"}:
-        # No built-in passages; these retrieve over an external corpus
-        # (see corpus_spec). Yield nothing.
+    if dataset == "popqa":
+        # PopQA 没有 passage,但每条数据有 Q&A 对(无 wiki 证据)。
+        # 从 subj/obj/possible_answers/s_wiki_title 拼出 self-knowledge 段落,
+        # 与 TriviaQA 的 entity_pages 流程对齐(TriviaQA 用 wiki 段落,这里自合成)。
+        # 这样 build_index.py --dataset popqa --limit 14267 能建出自给自足索引,
+        # BM25 检索命中 subject 文档 → LLM 从 context 抄答案。
+        for example_index, example in enumerate(examples):
+            subj_title = example.get("s_wiki_title") or example.get("subj") or ""
+            prop = example.get("prop") or ""
+            # 解析 possible_answers / o_aliases (JSON 字符串)
+            answers: list[str] = []
+            for key in ("possible_answers", "o_aliases"):
+                raw = example.get(key)
+                if not raw:
+                    continue
+                if isinstance(raw, str):
+                    try:
+                        raw = json.loads(raw)
+                    except Exception:
+                        continue
+                if isinstance(raw, list):
+                    answers.extend(str(v).strip() for v in raw if str(v).strip())
+            obj = example.get("obj")
+            if obj:
+                answers.append(str(obj).strip())
+            # 去重(保持首次出现顺序)
+            seen: set[str] = set()
+            uniq: list[str] = []
+            for a in answers:
+                if a.lower() in seen:
+                    continue
+                seen.add(a.lower())
+                uniq.append(a)
+            # 拼 self-knowledge 段落(subject + prop + answer + aliases)
+            primary = uniq[0] if uniq else "unknown"
+            other_names = ", ".join(uniq[1:6])
+            aliases = ", ".join(uniq[6:])
+            text = (
+                f"{example.get('subj', '')} is a {prop}: {primary}. "
+                + (f"Other names: {other_names}. " if other_names else "")
+                + (f"Aliases: {aliases}. " if aliases else "")
+            ).strip()
+            yield Document(
+                id=f"popqa:{example_index}:0",
+                title=subj_title,
+                text=text,
+                example_id=str(example_index),
+                paragraph_id=0,
+            )
+        return
+    if dataset == "nqswap":
+        # NQ-Swap 故意不产出(noise test,检索在外部无关语料上跑)。
         return
     for example_index, example in enumerate(examples):
         if dataset == "2wikimultihopqa":
@@ -354,17 +418,24 @@ def example_answers(example, dataset: str = "hotpotqa") -> list[str]:
     """
     if dataset == "popqa":
         out: list[str] = []
-        for key in ("s_answers", "e_answers"):
-            values = example.get(key) or []
-            if not isinstance(values, list):
-                values = [values]
-            out.extend(str(v) for v in values)
-        # Fallbacks in case the actual schema differs from the canonical one.
-        for key in ("object", "answer", "possible_answers"):
-            value = example.get(key)
-            if not value:
+        # possible_answers / o_aliases 实际是 JSON 字符串(不是 list),
+        # 之前被原样塞进单元素列表,导致 EM 永远 0、F1 被严重低估。
+        # 这里解析 JSON 拿到真正的答案别名列表。
+        for key in ("possible_answers", "o_aliases"):
+            raw = example.get(key)
+            if not raw:
                 continue
-            out.extend(value if isinstance(value, list) else [value])
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except Exception:
+                    continue
+            if isinstance(raw, list):
+                out.extend(str(v).strip() for v in raw if str(v).strip())
+        # obj 是单字符串主答案
+        obj = example.get("obj")
+        if obj:
+            out.append(str(obj).strip())
         return _dedup(out)
     if dataset == "nqswap":
         return _dedup(example.get("answers") or [])
@@ -386,7 +457,10 @@ def corpus_spec(dataset: str, split: str) -> tuple[str, str]:
     retrieves over its own contexts.
     """
     if dataset == "popqa":
-        return "wikisimple", "train"
+        # Self-reference: PopQA 用自身 Q&A 对做语料(见 iter_context_paragraphs
+        # 的 popqa 分支),与 TriviaQA 的 entity_pages 流程一致。
+        # 之前指向 Simple English Wikipedia,长尾实体召不回,改回 self-ref。
+        return "popqa", split
     if dataset == "nqswap":
         return NQSWAP_NOISE_CORPUS
     return dataset, split
